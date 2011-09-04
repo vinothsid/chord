@@ -1,4 +1,5 @@
 #include "ChordLib.h"
+#include <stdlib.h>
 
 int main () {
    struct Node * n1;
