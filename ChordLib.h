@@ -5,8 +5,10 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <string.h>
+
 #define PROTOCOL "CHORD";
 #define VERSION "1.0";
+
 
 struct Node {
 	int id;
