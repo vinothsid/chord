@@ -33,15 +33,15 @@ struct Msg* initMsg(){
 
 
 
-char* framePacket(char* method, short int keyID, struct  Node* n, char* payload, struct Msg** m) {
+/*char* framePacket(char* method, short int keyID, struct  Node* n, char* payload, struct Msg** m) {
         char *pkt = "Inside Frame Packet";
 	*m = initMsg();
         return pkt;
-}
+}*/
 
 struct Msg* getKey(short int id) {
 	struct Node *n;
-	struct Msg* m1,m2;
+	struct Msg  *m1,*m2;
         char *requestPkt,*responsePkt;
 	int sock;
 	n = lookup(id);	
@@ -50,7 +50,7 @@ struct Msg* getKey(short int id) {
 	sendPkt(sock,requestPkt);	
 	responsePkt = recvPkt(sock);
 	close(sock);
-	m2 = tokenizePkt(responsePkt);		
+	//m2 = tokenizePkt(responsePkt);//to be used later		
 	return m2;
 }
 
@@ -67,8 +67,8 @@ struct Node * lookup(short int id) {
 
 char* framePacket(char* method,short int keyID, struct  Node* n, char* payload, struct Msg** m) {
 	char *pkt ;
-	if {strcmp(method,"GET") == 0} {
-		pkt = {GET 1011 Chord/1.1\nHost: 127.0.0.1:5000\nContact: 127.0.0.1:3490\n\n}
+	if (strcmp(method,"GET") == 0) {
+		pkt = "GET 1011 Chord/1.1\nHost: 127.0.0.1:5000\nContact: 127.0.0.1:3490\n\n";
 	}
 	return pkt;
 }
@@ -76,7 +76,7 @@ char* framePacket(char* method,short int keyID, struct  Node* n, char* payload, 
 int sendPkt(int sock,char *buf) {
 	/* send request */
 	
-	return send(s, buf, strlen(buf),0);
+	return send(sock, buf, strlen(buf),0);
 }
 
 char *recvPkt(int sock) {
@@ -88,7 +88,7 @@ char *recvPkt(int sock) {
         buflen=BLEN;
 
 
-	while ((n=recv(s,recBptr,buflen,0))>0) {
+	while ((n=recv(sock,recBptr,buflen,0))>0) {
                 recBptr +=n;
                 buflen -=n;
         }

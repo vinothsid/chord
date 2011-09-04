@@ -5,9 +5,9 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <string.h>
-#define PROTOCOL "CHORD";
-#define VERSION "1.0";
-
+#define PROTOCOL "CHORD"
+#define VERSION "1.0"
+#define BLEN 300
 
 struct Node {
 	int keyID;
