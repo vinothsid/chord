@@ -39,6 +39,60 @@ char* framePacket(char* method, short int keyID, struct  Node* n, char* payload,
         return pkt;
 }
 
+struct Msg* getKey(short int id) {
+	struct Node *n;
+	struct Msg* m1,m2;
+        char *requestPkt,*responsePkt;
+	int sock;
+	n = lookup(id);	
+	requestPkt = framePacket("Get",id,n,NULL,&m1 );
+	sock = tcpConnect(n);
+	sendPkt(sock,requestPkt);	
+	responsePkt = recvPkt(sock);
+	close(sock);
+	m2 = tokenizePkt(responsePkt);		
+	return m2;
+}
 
 
+struct Node * lookup(short int id) {
+	struct Node *n;
+	n=(struct Node*)malloc(sizeof(struct Node));
+	n->keyID = 1011;
+	strcpy(n->ipstr,"127.0.0.1");
+	n->port = 5000;
+	n->next = NULL;
+	return n;
+}
 
+char* framePacket(char* method,short int keyID, struct  Node* n, char* payload, struct Msg** m) {
+	char *pkt ;
+	if {strcmp(method,"GET") == 0} {
+		pkt = {GET 1011 Chord/1.1\nHost: 127.0.0.1:5000\nContact: 127.0.0.1:3490\n\n}
+	}
+	return pkt;
+}
+
+int sendPkt(int sock,char *buf) {
+	/* send request */
+	
+	return send(s, buf, strlen(buf),0);
+}
+
+char *recvPkt(int sock) {
+	char recBuf[BLEN];
+        char *recBptr; //pointer to recBuf
+        int n;
+        int buflen;
+	recBptr=recBuf;
+        buflen=BLEN;
+
+
+	while ((n=recv(s,recBptr,buflen,0))>0) {
+                recBptr +=n;
+                buflen -=n;
+        }
+	
+	return recBuf;
+
+}
