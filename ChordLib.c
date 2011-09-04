@@ -1,5 +1,6 @@
 #include "ChordLib.h"
 
+int debug = 1;
 int tcpConnect(struct Node* n) {
 	int sock;
 	struct hostent* host;
@@ -45,8 +46,11 @@ struct Msg* getKey(short int id) {
         char *requestPkt,*responsePkt;
 	int sock;
 	n = lookup(id);	
-	requestPkt = framePacket("Get",id,n,NULL,&m1 );
+	requestPkt = framePacket("GET",id,n,NULL,&m1 );
 	sock = tcpConnect(n);
+	if (sock==-1) {
+		perror ("Socket is not established properly");
+        }
 	sendPkt(sock,requestPkt);	
 	responsePkt = recvPkt(sock);
 	close(sock);
@@ -66,16 +70,20 @@ struct Node * lookup(short int id) {
 }
 
 char* framePacket(char* method,short int keyID, struct  Node* n, char* payload, struct Msg** m) {
-	char *pkt ;
+	char *pkt;
 	if (strcmp(method,"GET") == 0) {
-		pkt = "GET 1011 Chord/1.1\nHost: 127.0.0.1:5000\nContact: 127.0.0.1:3490\n\n";
+		pkt= "GET 1011 Chord/1.1\nHost: 127.0.0.1:5000\nContact: 127.0.0.1:3490\n\n";
+	
 	}
+        printf("Framed pkt: %s",pkt );
 	return pkt;
 }
 
 int sendPkt(int sock,char *buf) {
 	/* send request */
-	
+	if (debug == 1) {
+		printf("Sending pkt:\n%s",buf);
+	}	
 	return send(sock, buf, strlen(buf),0);
 }
 
@@ -83,16 +91,25 @@ char *recvPkt(int sock) {
 	char recBuf[BLEN];
         char *recBptr; //pointer to recBuf
         int n;
-        int buflen;
+        int buflen=5;
 	recBptr=recBuf;
         buflen=BLEN;
 
-
 	while ((n=recv(sock,recBptr,buflen,0))>0) {
-                recBptr +=n;
                 buflen -=n;
+	/*	if (debug == 1) {
+			recBptr[n]='\0';
+			printf("Received pkt:%s\n",recBptr);
+        } */      
+                recBptr +=n;
+	//	recBptr++;
+
         }
-	
+
+	recBuf[recBptr-recBuf+2] = '\0';
+	if (debug == 1) {
+		printf("Received pkt:%s",recBuf);
+	}	
 	return recBuf;
 
 }

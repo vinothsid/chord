@@ -59,21 +59,6 @@ int main()
             printf("\n I got a connection from (%s , %d)",
                    inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
-            while (1)
-            {
-              printf("\n SEND (q or Q to quit) : ");
-              gets(send_data);
-              
-              if (strcmp(send_data , "q") == 0 || strcmp(send_data , "Q") == 0)
-              {
-                send(connected, send_data,strlen(send_data), 0); 
-                close(connected);
-                break;
-              }
-               
-              else
-                 send(connected, send_data,strlen(send_data), 0);  
-
               bytes_recieved = recv(connected,recv_data,1024,0);
 
               recv_data[bytes_recieved] = '\0';
@@ -86,7 +71,23 @@ int main()
 
               else 
               printf("\n RECIEVED DATA = %s " , recv_data);
-              fflush(stdout);
+            while (1)
+            {
+              printf("\n SEND (q or Q to quit) : ");
+              gets(send_data);
+              
+              if (strcmp(send_data , "q") == 0 || strcmp(send_data , "Q") == 0)
+              {
+
+                send(connected, send_data,strlen(send_data), 0); 
+                close(connected);
+                break;
+              }
+               
+              else
+                 send(connected, send_data,strlen(send_data), 0);  
+              //   close(connected);
+  fflush(stdout);
             }
         }       
 
