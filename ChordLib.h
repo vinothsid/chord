@@ -10,7 +10,7 @@
 
 
 struct Node {
-	int id;
+	int keyID;
 	char ipstr[INET6_ADDRSTRLEN];
 	short int port;
 	struct Node* next;
