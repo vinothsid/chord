@@ -28,7 +28,7 @@ int tcpConnect(struct Node* n) {
 struct Msg* initMsg(){
 	struct Msg* newMsg;
 	newMsg = (struct Msg*)malloc(sizeof(struct Msg));
-        newMsg->hostPort = -1;
+        //newMsg->hostPort = -1;
 	return newMsg;
 }
 
@@ -46,13 +46,16 @@ struct Msg* getKey(short int id) {
         char *requestPkt,*responsePkt;
 	int sock;
 	n = lookup(id);	
-	requestPkt = framePacket("GET",id,n,NULL,&m1 );
+	requestPkt = framePacket("GET",id,n,NULL,NULL,&m1 );
 	sock = tcpConnect(n);
 	if (sock==-1) {
 		perror ("Socket is not established properly");
         }
 	sendPkt(sock,requestPkt);	
 	responsePkt = recvPkt(sock);
+	if (debug == 1) {
+		printf("getKey() : Response Pkt : %s\n",responsePkt);
+	}
 	close(sock);
 	//m2 = tokenizePkt(responsePkt);//to be used later		
 	return m2;
@@ -66,29 +69,115 @@ struct Node * lookup(short int id) {
 	strcpy(n->ipstr,"127.0.0.1");
 	n->port = 5000;
 	n->next = NULL;
+	if (debug == 1 ) {
+		printf("lookup() ");
+	}
 	return n;
 }
 
-char* framePacket(char* method,short int keyID, struct  Node* n, char* payload, struct Msg** m) {
+
+
+int utilFramePacket(char** attr, char** val,char *pkt) {
+	strcpy(pkt,val[0]);
+	strcat(pkt," ");
+	strcat(pkt,PROTOCOL);
+	strcat(pkt,"/");
+	strcat(pkt,VERSION);
+	int len;
+	len = strlen(pkt);
+	pkt[len]='\n';
+	pkt[len+1] = '\0';
+	if (debug == 1) {
+		printf("The first line is %s\n", pkt);
+	}	
+	int i=1;
+	while(attr[i]!=NULL){
+		strcat(pkt,attr[i]);
+		strcat(pkt,":");
+		strcat(pkt," ");
+		strcat(pkt,val[i]);
+		len = strlen(pkt);
+        	pkt[len]='\n';
+        	pkt[len+1] = '\0';
+		i++;
+	}
+	
+	if (debug ==1 ){
+		printf("utilFramePacket() :Packet : \n%s\n", pkt);
+	}
+	return 0;	
+}
+
+char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct Node* contactNode, struct metaFile* payload, struct Msg** m) {
 	char *pkt;
-	if (strcmp(method,"GET") == 0) {
+	char host[INET6_ADDRSTRLEN + 10];
+	char contact[INET6_ADDRSTRLEN + 10];
+	char *tempHost;
+	tempHost = (char *)nodeToString(hostNode);
+	strcpy(host,tempHost);
+	free(tempHost);
+	//strcpy(contact,nodeToString(contactNode));
+	if (debug == 1 ) {
+		printf("framePacket() : Host : %s\n ",host);
+	}
+	if (payload ==NULL) {
+		char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+		char *val[15] = {method , itoa(keyID),host,"contact"}; 	
+		pkt = (char *)malloc(BLEN);
+
+		utilFramePacket(attr,val,pkt);
+	} else {
+		pkt = (char *)malloc(BLEN + payload->contentLength );
+		
+		
+	}
+	
+
+	/*Initialising values of struct Msg*/
+	struct Msg* temp=initMsg();
+	
+		
+	strcpy(temp->method,method);
+	strcpy(temp->proto, PROTOCOL);
+	strcpy(temp->ver, VERSION);
+	temp->keyID=keyID;
+	strcpy(temp->hostIP,hostNode->ipstr);
+	temp->hostPort=hostNode->port;
+	if (contactNode!=NULL) {
+		strcpy(temp->contactIP,contactNode->ipstr);
+		temp->contactPort = contactNode->port; 
+	}
+	if (payload!=NULL) {
+		temp->fileInfo=payload;
+	} else {
+	}
+	
+	*m=temp;
+	/*End of initialisation*/
+	
+/*	if (strcmp(temp->method,"GET") == 0) {
 		pkt= "GET 1011 Chord/1.1\nHost: 127.0.0.1:5000\nContact: 127.0.0.1:3490\n\n";
 	
+		strcpy(pkt,temp->method);
+		strcat(pkt," ");
+		strcat(pkt,temp->keyID);	
+	
 	}
-        printf("Framed pkt: %s",pkt );
+*/
+        printf("framePacket() : Packet: %s",pkt );
 	return pkt;
 }
 
 int sendPkt(int sock,char *buf) {
 	/* send request */
 	if (debug == 1) {
-		printf("Sending pkt:\n%s",buf);
+		printf("sendPkt() : Sending pkt:\n%s",buf);
 	}	
 	return send(sock, buf, strlen(buf),0);
 }
 
 char *recvPkt(int sock) {
-	char recBuf[BLEN];
+	char *recBuf = (char *)malloc(BLEN);
         char *recBptr; //pointer to recBuf
         int n;
         int buflen=5;
@@ -108,7 +197,7 @@ char *recvPkt(int sock) {
 
 	recBuf[recBptr-recBuf+2] = '\0';
 	if (debug == 1) {
-		printf("Received pkt:%s",recBuf);
+		printf("recvPkt() : Received pkt:%s",recBuf);
 	}	
 	return recBuf;
 
