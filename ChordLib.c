@@ -1,5 +1,9 @@
 #include "ChordLib.h"
 
+extern struct Node* origin;
+extern struct Node* finger[4];
+
+
 int debug = 1;
 int tcpConnect(struct Node* n) {
 	int sock;
@@ -32,6 +36,7 @@ struct Msg* initMsg(){
 	return newMsg;
 }
 
+	
 
 
 /*char* framePacket(char* method, short int keyID, struct  Node* n, char* payload, struct Msg** m) {
@@ -57,20 +62,169 @@ struct Msg* getKey(short int id) {
 		printf("getKey() : Response Pkt : %s\n",responsePkt);
 	}
 	close(sock);
-	//m2 = tokenizePkt(responsePkt);//to be used later		
-	return m2;
+	//m2 = tokenize(responsePkt);//to be used later	*/	
+	//return m2;
+}
+struct Msg* tokenize(char* pkt) {
+
+}
+
+struct Node* findSuccessorClient(int id){
+/*	struct Node *n=(struct Node*)malloc(sizeof(struct Node));
+        n->keyID = 1035;
+        strcpy(n->ipstr,"127.0.0.1");
+        n->port = 5000;
+        n->next = NULL;
+        if (debug == 1 ) {
+                printf("findSuccessorClient()\n ");
+        }
+*/	int i =0;
+	if (finger[0]->keyID < id &&  id <= finger[1]->keyID){
+		finger[1]->port=5000;
+		strcpy(finger[1]->ipstr,"127.0.0.1");
+		return finger[1];
+	} else {
+		for (i=3; i>1; i--) {
+			if (finger[i]->keyID < id ) {
+				finger[i]->port=5000;
+				strcpy(finger[i]->ipstr,"127.0.0.1");
+				return finger[i];
+			} 
+		}
+	}	
+	
+	return NULL;
+}
+
+
+initFingerTable(){
+	int i;
+	if (debug ==1 ){
+		printf("initFingerTable()\n");
+	}
+	origin=(struct Node *)malloc(sizeof(struct Node));
+	pred=(struct Node *)malloc(sizeof(struct Node));
+	origin->keyID=0;
+	origin->port=5000;
+	pred->keyID=0;
+	strcpy(origin->ipstr,"127.0.0.1");
+	for (i=0; i<4; i++) {
+		finger[i]=(struct Node*)malloc(sizeof(struct Node));
+		finger[i]->keyID=0;
+	}
+		
+}
+
+int join (){
+	//struct Node n;
+	struct Msg *m1, *m2;
+	int sock;
+	char  *requestPkt;
+	char  *responsePkt;
+	initFingerTable();
+	if (debug ==1 ) {
+		printf("join()\n");
+	}	
+	pred->keyID=-1;
+	requestPkt= framePacket("JOIN",-1,NULL,NULL,NULL,&m1);
+	
+	sock = tcpConnect(origin);
+	printf("Socket num : %d\n",sock);
+	if (sock < 0) {
+		perror("Socket connection failed");
+		exit(1);
+	}
+	sendPkt(sock,requestPkt);
+
+	responsePkt=recvPkt(sock);
+	printf("Response pkt: %s\n",responsePkt);
+	close(sock);	
+	m2=tokenize(responsePkt);
+	finger[0]->keyID = 1011;// m2->keyID;
+	finger[0]->sblNo = 0; //m2->sblNoMsg;
+	//Next instruction sets the successor of the current node
+
+	finger[1] = lookup(finger[0]->keyID + 1);
+	printf("1111111111\n");	
+
+	//Set of instructions that set the finger table
+	//Each time a lookup is performed a check is performed to check if 
+	//the current finger is also the next finger
+	if (finger[1]->keyID < (finger[0]->keyID + 2)) {
+		printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
+		finger[2] = lookup((finger[0]->keyID + 2));
+	}
+	else 
+		finger[2] = finger[1];
+	printf("2222222\n");
+        if (finger[2]->keyID < (finger[0]->keyID + 4)) {
+		printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
+                finger[3] = lookup((finger[0]->keyID + 4));
+        }
+        else
+                finger[3] = finger[2];
+       /* if (finger[3]->keyID < (finger[0]->keyID + 8)) {
+                finger[4] = lookup((finger[0]->keyID + 8));
+        }
+        else
+                finger[4] = finger[3];*/
+
+	printf("3333333333\n");
+	return 0;
 }
 
 
 struct Node * lookup(short int id) {
+printf("4444444444");
 	struct Node *n;
-	n=(struct Node*)malloc(sizeof(struct Node));
+	struct Node *n2;
+	struct Node *n3;
+	n=(struct Node *)malloc(sizeof(struct Node));
+	n3=(struct Node *)malloc(sizeof(struct Node));
+	struct Msg *m1, *m2;
+	int sock;
+	//int sock1;
+	char respCode[15];
+	char *requestPkt, *responsePkt;
+	//old test code
+	/*n=(struct Node*)malloc(sizeof(struct Node));
 	n->keyID = 1011;
 	strcpy(n->ipstr,"127.0.0.1");
 	n->port = 5000;
 	n->next = NULL;
 	if (debug == 1 ) {
 		printf("lookup() ");
+	}
+	return n;*/
+	//end of old test code
+printf("4444444444");
+	n2 = findSuccessorClient(id);
+	requestPkt=framePacket("GET",id, n2, finger[0], NULL, &m1);		
+//sleep(2);
+	sock = tcpConnect(n2);
+	sendPkt(sock, requestPkt);
+	responsePkt=recvPkt(sock);
+	close(sock);
+	m2=tokenize(responsePkt);
+	strcpy(respCode,m2->method);
+	
+	while (respCode == "305") {
+		strcpy(n3->ipstr, m2->contactIP);
+		n3->port = m2->contactPort;
+		requestPkt = framePacket("GET", id, n3, finger[0],NULL, &m1);
+		sock = tcpConnect(n3);
+		sendPkt(sock, requestPkt);
+		responsePkt=recvPkt(sock);
+		close(sock);	
+		m2 = tokenize(responsePkt);
+		strcpy(respCode,m2->method);
+			
+	}	
+	
+	if (m2->method == "200") {
+		strcpy(n->ipstr,m2->contactIP);
+		n->port = m2->contactPort;
+		n->keyID=m2->keyID;
 	}
 	return n;
 }
@@ -88,7 +242,7 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 	pkt[len]='\n';
 	pkt[len+1] = '\0';
 	if (debug == 1) {
-		printf("The first line is %s\n", pkt);
+		printf("utilFramePacket(): first line : %s\n", pkt);
 	}	
 	int i=1;
 	while(attr[i]!=NULL){
@@ -103,9 +257,10 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 	}
 	
 	if (debug ==1 ){
-		printf("utilFramePacket() :Packet : \n%s\n", pkt);
+		printf("utilFramePacket() :Packet : \n%s%d\n", pkt,len);
+
 	}
-	return 0;	
+	return 4;	
 }
 
 char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct Node* contactNode, struct metaFile* payload, struct Msg** m) {
@@ -113,24 +268,31 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 	char host[INET6_ADDRSTRLEN + 10];
 	char contact[INET6_ADDRSTRLEN + 10];
 	char *tempHost;
-	tempHost = (char *)nodeToString(hostNode);
-	strcpy(host,tempHost);
-	free(tempHost);
+	if (hostNode != NULL) {
+		tempHost = (char *)nodeToString(hostNode);
+		strcpy(host,tempHost);
+		free(tempHost);
+	} 
+	else 
+		strcpy(host,"anonymous");
 	//strcpy(contact,nodeToString(contactNode));
 	if (debug == 1 ) {
 		printf("framePacket() : Host : %s\n ",host);
 	}
 	if (payload ==NULL) {
 		char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-		char *val[15] = {method , itoa(keyID),host,"contact"}; 	
-		pkt = (char *)malloc(BLEN);
-
+		char *val[15] = {method , itoa(keyID),host,"contact"}; 
+		printf("after val\n");	
+		pkt = (char *)malloc(BLEN*sizeof(char));
 		utilFramePacket(attr,val,pkt);
-	} else {
+		if (debug == 1) {
+			printf("framePacket(): returned from utilFramePacket()\n");
+		}
+	} 
+	else 
 		pkt = (char *)malloc(BLEN + payload->contentLength );
 		
-		
-	}
+	
 	
 
 	/*Initialising values of struct Msg*/
@@ -141,8 +303,12 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 	strcpy(temp->proto, PROTOCOL);
 	strcpy(temp->ver, VERSION);
 	temp->keyID=keyID;
-	strcpy(temp->hostIP,hostNode->ipstr);
-	temp->hostPort=hostNode->port;
+
+	if (hostNode != NULL) {
+		strcpy(temp->hostIP,hostNode->ipstr);
+		temp->hostPort=hostNode->port;
+	}
+/*
 	if (contactNode!=NULL) {
 		strcpy(temp->contactIP,contactNode->ipstr);
 		temp->contactPort = contactNode->port; 
@@ -153,6 +319,7 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 	}
 	
 	*m=temp;
+*/
 	/*End of initialisation*/
 	
 /*	if (strcmp(temp->method,"GET") == 0) {
@@ -163,33 +330,33 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 		strcat(pkt,temp->keyID);	
 	
 	}
-*/
-        printf("framePacket() : Packet: %s",pkt );
+*/ 
+        printf("framePacket() : Packet: %s\n",pkt );
 	return pkt;
 }
 
 int sendPkt(int sock,char *buf) {
 	/* send request */
 	if (debug == 1) {
-		printf("sendPkt() : Sending pkt:\n%s",buf);
+		printf("sendPkt() : Sending pkt:\n%s\n",buf);
 	}	
-	return send(sock, buf, strlen(buf),0);
+	return send(sock, buf, strlen(buf) ,0);
 }
 
 char *recvPkt(int sock) {
 	char *recBuf = (char *)malloc(BLEN);
         char *recBptr; //pointer to recBuf
         int n;
-        int buflen=5;
+        int buflen;
 	recBptr=recBuf;
         buflen=BLEN;
-
+	
 	while ((n=recv(sock,recBptr,buflen,0))>0) {
                 buflen -=n;
 	/*	if (debug == 1) {
 			recBptr[n]='\0';
-			printf("Received pkt:%s\n",recBptr);
-        } */      
+			printf("Received pkt:%s Num of bytes received: %d\n",recBptr,n);
+        	}       */
                 recBptr +=n;
 	//	recBptr++;
 

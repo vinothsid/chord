@@ -8,13 +8,19 @@
 #define PROTOCOL "CHORD"
 #define VERSION "1.0"
 #define BLEN 300
+//#define log(funcName,str,variable) if (debug ==1) { printf("
 
 struct Node {
 	short int keyID;
 	char ipstr[INET6_ADDRSTRLEN];
 	short int port;
 	struct Node* next;
-};
+	short int sblNo;
+	
+} *finger[4], *pred, *origin;
+
+
+
 
 struct Msg {
 	char method[15];
@@ -26,6 +32,7 @@ struct Msg {
 	char contactIP[INET6_ADDRSTRLEN];
 	short int contactPort; 
 	struct metaFile* fileInfo ;
+	int sblNoMsg;
 };
 
 struct metaFile {
@@ -49,13 +56,15 @@ int sendPkt(int sock,char *buf);
 
 struct Msg* getKey(short int id); // Looks up for the key,finds the node responsible for the key,frames pkt,sends pkt ,receives response and return response in a struct.
 
-struct Msg * tokenizePkt(char *pkt); // Tokenizes the pkt and converts to struct Msg.
+struct Msg * tokenize(char *pkt); // Tokenizes the pkt and converts to struct Msg.
 
 char *recvPkt(int sock); // Receives the pkt and returns it as a string.
 
 int action(struct Msg *m); //Takes action based on the values of struct Msg *m ,and returns 0 for pass and non-zero for failure.
 
 int join();// Yet to think about it .
+
+struct Node* findSuccessorClient(int id);
 
 int leave();//Yet to think about it.
 
