@@ -11,11 +11,11 @@
 //#define log(funcName,str,variable) if (debug ==1) { printf("
 
 struct Node {
-	short int keyID;
+	int keyID;
 	char ipstr[INET6_ADDRSTRLEN];
-	short int port;
+	int port;
 	struct Node* next;
-	short int sblNo;
+	int sblNo;
 	
 } *finger[4], *pred, *origin;
 
@@ -26,11 +26,11 @@ struct Msg {
 	char method[15];
 	char proto[6];
 	char ver[4];
-	short int keyID;
+	int keyID;
 	char hostIP[INET6_ADDRSTRLEN];
- 	short int hostPort;
+ 	int hostPort;
 	char contactIP[INET6_ADDRSTRLEN];
-	short int contactPort; 
+	int contactPort; 
 	struct metaFile* fileInfo ;
 	int sblNoMsg;
 };

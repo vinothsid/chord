@@ -2,32 +2,59 @@
 #define port "5000"
 #define back 10
 #define BLEN 300
+
 void sigchld_handler(int s)
 {
 	while(waitpid(-1, NULL, WNOHANG) > 0);
 }
 
-void func(char *str){
-char *msg, *msg1,*msg2;
-msg = strtok(str,",");
-
-while(msg!=NULL)
-{
-
-msg1=msg;
-msg=strtok(NULL,",");
-msg2=msg;
-}
+void token(char *str){
+struct Msg* rcvMsg;
 printf("hello");
-printf("\nThis is the printed passed value %s \n",msg1);
+printf("\nThis is the printed passed value %s \n",str);
+char *p ;
+rcvMsg=(struct Msg *)malloc(sizeof(struct Msg *));
+p=strtok(str," /:;");
+strcpy(rcvMsg->method,p);
+printf("....%s...\n",rcvMsg->method);
+p=strtok(NULL," /:;");
+strcpy(rcvMsg->proto,p);
+printf("....%s...\n",rcvMsg->proto);
+p=strtok(NULL," /:;");
+strcpy(rcvMsg->ver,p);
+printf("....%s...\n",rcvMsg->ver);
+p=strtok(NULL," /:;");
+p=strtok(NULL," /:;");
+rcvMsg->keyID =atoi(p);
+printf("....%d...\n",rcvMsg->keyID);
+p=strtok(NULL," /:;");
+p=strtok(NULL," /:;");
+strcpy(rcvMsg->hostIP,p);
+printf("....%s...\n",rcvMsg->hostIP);
+p=strtok(NULL," /:;");
+rcvMsg->hostPort=atoi(p);
+printf("....%d...\n",rcvMsg->hostPort);
+p=strtok(NULL," /:;");
+p=strtok(NULL," /:;");
+strcpy(rcvMsg->contactIP,p);
+printf("....%s...\n",rcvMsg->contactIP);
+p=strtok(NULL," /:;");
+rcvMsg->contactPort=atoi(p);
+printf("....%d...\n",rcvMsg->contactPort);
+//rcvMsg->fileInfo = str->fileInfo;
+//rcvMsg->sblNoMsg = str->sblNoMsg;
 
+//return rcvMsg
 }
+
+
 
 
 int tcpServer(void)
 {
+int n;
 	pthread_t thread1;
-	char *msg ="SAB GOL MAL HAIN BHAI SAB GOL MAL HAIN";
+	char *msg ="SAB GOL MAL HAIN BHAI SAB GOL MAL HAIN\n";
 char *msg1;
 	int sockfd, new_fd, ret;  // listen on sock_fd, new connection on new_fd
 	struct addrinfo hints, *servinfo, *p;/* hints are hints for get  addr info servinfo is server information and p is just used as a pointer*/
@@ -37,7 +64,6 @@ char *msg1;
 	int yes=1;
 	char s[INET6_ADDRSTRLEN];
 	int rv;
-
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
@@ -103,20 +129,17 @@ char *msg1;
 			close(sockfd); // child doesn't need the listener
 			//if (send(new_fd, "Hello, world!", 13, 0) == -1)
 			//	perror("send");
-msg1=malloc(BLEN);
-//printf("\n%s\n",msg);
-while(recv(new_fd,msg1,300,0)>0)
-{
-printf("receiving.....\n");
-}
+	msg1=malloc(BLEN);
 
-msg=strcat(msg,",");
-//msg=strcat(msg,msg1);
-printf("\n%s\n",msg);
-printf("\n%s\n",msg);
-ret = pthread_create (&thread1,NULL, (void *)func,msg);
-pthread_join(thread1,NULL);
-printf("Error in getting out of thread ");
+	if(n=recv(new_fd,msg1,300,0)<0)
+	{
+		printf("NOT receiving.....\n");
+	}
+	printf("\nreceived successfully..%s....",msg1);
+
+	ret = pthread_create (&thread1,NULL,(void *)token,msg1);
+
+	pthread_join(thread1,NULL);
 
 			
 

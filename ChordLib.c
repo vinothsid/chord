@@ -239,8 +239,8 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 	strcat(pkt,VERSION);
 	int len;
 	len = strlen(pkt);
-	pkt[len]='\n';
-	pkt[len+1] = '\0';
+	pkt[len]=';';
+	pkt[len+1] = '\n';
 	if (debug == 1) {
 		printf("utilFramePacket(): first line : %s\n", pkt);
 	}	
@@ -248,11 +248,11 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 	while(attr[i]!=NULL){
 		strcat(pkt,attr[i]);
 		strcat(pkt,":");
-		strcat(pkt," ");
+		//strcat(pkt," ");
 		strcat(pkt,val[i]);
 		len = strlen(pkt);
-        	pkt[len]='\n';
-        	pkt[len+1] = '\0';
+        	pkt[len]=';';
+        	pkt[len+1] = '\n';
 		i++;
 	}
 	
