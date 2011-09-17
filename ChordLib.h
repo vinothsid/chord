@@ -8,7 +8,9 @@
 #define PROTOCOL "CHORD"
 #define VERSION "1.0"
 #define BLEN 300
+//int debug=1;
 //#define log(funcName,str,variable) if (debug ==1) { printf("
+//#define log(a,b,c) if(debug) printf("%s ... %s ... %s", a, b, c);
 
 struct Node {
 	int keyID;
@@ -69,3 +71,4 @@ struct Node* findSuccessorClient(int id);
 int leave();//Yet to think about it.
 
 void initFingerTable();
+struct Msg* token(char *str);

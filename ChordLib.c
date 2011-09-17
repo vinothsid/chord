@@ -5,7 +5,7 @@ extern struct Node* origin;
 extern struct Node* finger[4];
 
 
-int debug = 1;
+ int debug=1;
 /**************************** TCP CONNECT ****************************************/
 int tcpConnect(struct Node* n) {
 	int sock;
@@ -296,14 +296,14 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 		free(tempHost);
 	} 
 	else 
-		strcpy(host,"anonymous");
+		strcpy(host,"anonymous:6060");
 	//strcpy(contact,nodeToString(contactNode));
 	if (debug == 1 ) {
 		printf("framePacket() : Host : %s\n ",host);
 	}
 	if (payload ==NULL) {
 		char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-		char *val[15] = {method , itoa(keyID),host,"contact"}; 
+		char *val[15] = {method , itoa(keyID),host,"contact:8080"}; 
 		printf("after val\n");	
 		pkt = (char *)malloc(BLEN*sizeof(char));
 		utilFramePacket(attr,val,pkt);
@@ -396,3 +396,48 @@ char *recvPkt(int sock) {
 	return recBuf;
 
 }
+
+struct Msg* token(char *str1)
+{
+
+        struct Msg* rcvMsg;
+        char str[300];
+        strcpy(str,str1);
+        printf("\nThis is the printed PPpassed value :\n%s \n",str);
+        char *p ;
+        rcvMsg=(struct Msg *)malloc(sizeof(struct Msg ));
+        p=strtok(str," /:;'\n'");
+        strcpy(rcvMsg->method,p);
+        printf("....%s...\n",rcvMsg->method);
+        p=strtok(NULL," /:;'\n'");
+        strcpy(rcvMsg->proto,p);
+        printf("....%s...\n",rcvMsg->proto);
+        p=strtok(NULL," /:;'\n'");
+        strcpy(rcvMsg->ver,p);
+        printf("....%s...\n",rcvMsg->ver);
+        p=strtok(NULL," /:;'\n'");
+        p=strtok(NULL," /:;'\n'");
+        rcvMsg->keyID =atoi(p);
+        printf("....%d...\n",rcvMsg->keyID);
+        p=strtok(NULL," /:;'\n'");
+        p=strtok(NULL," /:;'\n'");
+        strcpy(rcvMsg->hostIP,p);
+        printf("....%s...\n",rcvMsg->hostIP);
+        p=strtok(NULL," /:;'\n'");
+        rcvMsg->hostPort=atoi(p);
+        printf("....%d...\n",rcvMsg->hostPort);
+        p=strtok(NULL," /:;'\n'");
+        p=strtok(NULL," /:;'\n'");
+        strcpy(rcvMsg->contactIP,p);
+        printf("....%s...\n",rcvMsg->contactIP);
+	p=strtok(NULL," /:;");
+	rcvMsg->contactPort=atoi(p);
+	printf("....%d...\n",rcvMsg->contactPort);
+        rcvMsg->fileInfo= NULL;
+        rcvMsg->sblNoMsg=0;
+//rcvMsg->fileInfo = str->fileInfo;
+//rcvMsg->sblNoMsg = str->sblNoMsg;
+       printf("\n SUCCESSFULLY TOKENIZED \n");
+        return rcvMsg;
+}
+

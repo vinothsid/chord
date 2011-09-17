@@ -14,7 +14,6 @@
 #include <pthread.h>
 #include "ChordLib.h"
 
-struct Msg* token(char *str);
 struct msgToken {
 	char *ptr;
 	int sock;
@@ -22,5 +21,7 @@ struct msgToken {
 };
 void func(char *st);
 int tcpServer();
+
+//struct Msg* token(char *str);
 //void (*abc)();
 
