@@ -68,3 +68,4 @@ struct Node* findSuccessorClient(int id);
 
 int leave();//Yet to think about it.
 
+void initFingerTable();

@@ -14,7 +14,12 @@
 #include <pthread.h>
 #include "ChordLib.h"
 
-struct Msg* tokenize(char* pkt);
+struct Msg* token(char *str);
+struct msgToken {
+	char *ptr;
+	int sock;
+
+};
 void func(char *st);
 int tcpServer();
 //void (*abc)();

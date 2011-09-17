@@ -1,10 +1,12 @@
 #include "ChordLib.h"
+//#include "serverLib.h"
 
 extern struct Node* origin;
 extern struct Node* finger[4];
 
 
 int debug = 1;
+/**************************** TCP CONNECT ****************************************/
 int tcpConnect(struct Node* n) {
 	int sock;
 	struct hostent* host;
@@ -29,6 +31,9 @@ int tcpConnect(struct Node* n) {
 	
 	return sock;
 }
+
+/***************************** INIT Msg *****************************************/
+/************** allocates memory to a Msg pointer ******************************/
 struct Msg* initMsg(){
 	struct Msg* newMsg;
 	newMsg = (struct Msg*)malloc(sizeof(struct Msg));
@@ -44,6 +49,9 @@ struct Msg* initMsg(){
 	*m = initMsg();
         return pkt;
 }*/
+
+/************************* GET KEY ******************************************/
+
 
 struct Msg* getKey(short int id) {
 	struct Node *n;
@@ -65,9 +73,13 @@ struct Msg* getKey(short int id) {
 	//m2 = tokenize(responsePkt);//to be used later	*/	
 	//return m2;
 }
+
+/**********************************Tokenize also defined in serverLib.c ************************************/
 struct Msg* tokenize(char* pkt) {
 
 }
+/**************************************************************************************/
+
 
 struct Node* findSuccessorClient(int id){
 /*	struct Node *n=(struct Node*)malloc(sizeof(struct Node));
@@ -95,9 +107,9 @@ struct Node* findSuccessorClient(int id){
 	
 	return NULL;
 }
+/******************************************* INIT FINGER TABLE ***************************************/
 
-
-initFingerTable(){
+void initFingerTable(){
 	int i;
 	if (debug ==1 ){
 		printf("initFingerTable()\n");
@@ -114,6 +126,8 @@ initFingerTable(){
 	}
 		
 }
+
+/********************************************* JOIN **************************************************/
 
 int join (){
 	//struct Node n;
@@ -137,9 +151,12 @@ int join (){
 	sendPkt(sock,requestPkt);
 
 	responsePkt=recvPkt(sock);
+
+
 	printf("Response pkt: %s\n",responsePkt);
 	close(sock);	
-	m2=tokenize(responsePkt);
+	//m2=token(responsePkt);
+	printf("\n");
 	finger[0]->keyID = 1011;// m2->keyID;
 	finger[0]->sblNo = 0; //m2->sblNoMsg;
 	//Next instruction sets the successor of the current node
@@ -173,6 +190,7 @@ int join (){
 	return 0;
 }
 
+/********************************************* LOOK UP ********************************************/
 
 struct Node * lookup(short int id) {
 printf("4444444444");
@@ -229,7 +247,7 @@ printf("4444444444");
 	return n;
 }
 
-
+/************************************ Util Frame Packet ********************************************/
 
 int utilFramePacket(char** attr, char** val,char *pkt) {
 	strcpy(pkt,val[0]);
@@ -239,8 +257,8 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 	strcat(pkt,VERSION);
 	int len;
 	len = strlen(pkt);
-	pkt[len]=';';
-	pkt[len+1] = '\n';
+	//pkt[len]=';';
+pkt[len] = '\n';
 	if (debug == 1) {
 		printf("utilFramePacket(): first line : %s\n", pkt);
 	}	
@@ -251,17 +269,21 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 		//strcat(pkt," ");
 		strcat(pkt,val[i]);
 		len = strlen(pkt);
-        	pkt[len]=';';
-        	pkt[len+1] = '\n';
+        //	pkt[len]=';';
+        	pkt[len] = '\n';
 		i++;
 	}
-	
+	len = strlen(pkt);
+        	pkt[len+1] = '\n';
+		
 	if (debug ==1 ){
 		printf("utilFramePacket() :Packet : \n%s%d\n", pkt,len);
 
 	}
 	return 4;	
 }
+
+/************************************ Frame Packet *********************************************/
 
 char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct Node* contactNode, struct metaFile* payload, struct Msg** m) {
 	char *pkt;
@@ -335,6 +357,8 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 	return pkt;
 }
 
+/******************************************************* SEND PACKET *****************************/
+
 int sendPkt(int sock,char *buf) {
 	/* send request */
 	if (debug == 1) {
@@ -342,6 +366,8 @@ int sendPkt(int sock,char *buf) {
 	}	
 	return send(sock, buf, strlen(buf) ,0);
 }
+
+/***************************************** RECEIVE PACKET ***************************************/
 
 char *recvPkt(int sock) {
 	char *recBuf = (char *)malloc(BLEN);
@@ -359,13 +385,14 @@ char *recvPkt(int sock) {
         	}       */
                 recBptr +=n;
 	//	recBptr++;
+		break;
 
         }
 
-	recBuf[recBptr-recBuf+2] = '\0';
-	if (debug == 1) {
-		printf("recvPkt() : Received pkt:%s",recBuf);
-	}	
+	recBuf[recBptr-recBuf+1] = '\0';
+	//if (debug == 1) {
+	//	printf("\nrecvPkt() : Received pkt:\n%s",recBuf);
+	//}	
 	return recBuf;
 
 }
