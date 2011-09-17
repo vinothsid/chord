@@ -118,11 +118,11 @@ void initFingerTable(){
 	pred=(struct Node *)malloc(sizeof(struct Node));
 	origin->keyID=0;
 	origin->port=5000;
-	pred->keyID=0;
+	pred->keyID=-1;
 	strcpy(origin->ipstr,"127.0.0.1");
 	for (i=0; i<4; i++) {
 		finger[i]=(struct Node*)malloc(sizeof(struct Node));
-		finger[i]->keyID=0;
+		finger[i]->keyID=-1;
 	}
 		
 }
@@ -155,15 +155,24 @@ int join (){
 
 	printf("Response pkt: %s\n",responsePkt);
 	close(sock);	
-	//m2=token(responsePkt);
-	printf("\n");
-	finger[0]->keyID = 1011;// m2->keyID;
+	m2=token(responsePkt);
+	if (debug==1) {
+		printf("MSG struct values . method : %s , keyId : %d ,hostIp: %s,hostPort: %d,contactIp: %s,contactPort: %d\n",m2->method,m2->keyID,m2->hostIP,m2->hostPort,m2->contactIP,m2->contactPort);
+	}
+	finger[0]->keyID = m2->keyID;// m2->keyID;
 	finger[0]->sblNo = 0; //m2->sblNoMsg;
 	//Next instruction sets the successor of the current node
 
 	finger[1] = lookup(finger[0]->keyID + 1);
-	printf("1111111111\n");	
+	if ( finger[1]==NULL ) {
+		perror("First finger is NULL\n");
+		exit(1);
+	}
+	printf("\n1111111111\n");	
 
+	if (debug==1) {
+		printf("join() : Actual Successor info: %s , keyID : %d",nodeToString(finger[1]),finger[1]->keyID);
+	}
 	//Set of instructions that set the finger table
 	//Each time a lookup is performed a check is performed to check if 
 	//the current finger is also the next finger
@@ -193,7 +202,7 @@ int join (){
 /********************************************* LOOK UP ********************************************/
 
 struct Node * lookup(short int id) {
-printf("4444444444");
+printf("4444444444\n");
 	struct Node *n;
 	struct Node *n2;
 	struct Node *n3;
@@ -215,7 +224,7 @@ printf("4444444444");
 	}
 	return n;*/
 	//end of old test code
-printf("4444444444");
+printf("4444444444\n");
 	n2 = findSuccessorClient(id);
 	requestPkt=framePacket("GET",id, n2, finger[0], NULL, &m1);		
 //sleep(2);
@@ -223,10 +232,12 @@ printf("4444444444");
 	sendPkt(sock, requestPkt);
 	responsePkt=recvPkt(sock);
 	close(sock);
-	m2=tokenize(responsePkt);
+	m2=token(responsePkt);
 	strcpy(respCode,m2->method);
-	
-	while (respCode == "305") {
+	if (debug == 1) {
+	        printf("lookup() 1 : MSG struct values . method : %s , keyId : %d ,hostIp: %s,hostPort: %d,contactIp: %s,contactPort: %d\n",m2->method,m2->keyID,m2->hostIP,m2->hostPort,m2->contactIP,m2->contactPort);
+	}
+	while (strcmp(m2->method,"305")==0) {
 		strcpy(n3->ipstr, m2->contactIP);
 		n3->port = m2->contactPort;
 		requestPkt = framePacket("GET", id, n3, finger[0],NULL, &m1);
@@ -234,17 +245,25 @@ printf("4444444444");
 		sendPkt(sock, requestPkt);
 		responsePkt=recvPkt(sock);
 		close(sock);	
-		m2 = tokenize(responsePkt);
+		m2 = token(responsePkt);
 		strcpy(respCode,m2->method);
+		if (debug == 1) {
+	        	printf("lookup() redirection : MSG struct values . method : %s , keyId : %d ,hostIp: %s,hostPort: %d,contactIp: %s,contactPort: %d\n",m2->method,m2->keyID,m2->hostIP,m2->hostPort,m2->contactIP,m2->contactPort);
+		}
 			
 	}	
 	
-	if (m2->method == "200") {
+	if (strcmp(m2->method,"200")==0) {
 		strcpy(n->ipstr,m2->contactIP);
 		n->port = m2->contactPort;
 		n->keyID=m2->keyID;
+		if (debug==1) {
+			printf("lookup() : Actual Successor info : %s , keyId: %d\n\n",nodeToString(n),n->keyID);
+		}
+		return n;
+
 	}
-	return n;
+	return NULL;
 }
 
 /************************************ Util Frame Packet ********************************************/
@@ -403,7 +422,9 @@ struct Msg* token(char *str1)
         struct Msg* rcvMsg;
         char str[300];
         strcpy(str,str1);
-        printf("\nThis is the printed PPpassed value :\n%s \n",str);
+	if (debug==1) {
+	        printf("\nThis is the passed value :\n%s \n",str);
+	}
         char *p ;
         rcvMsg=(struct Msg *)malloc(sizeof(struct Msg ));
         p=strtok(str," /:;'\n'");
@@ -437,7 +458,9 @@ struct Msg* token(char *str1)
         rcvMsg->sblNoMsg=0;
 //rcvMsg->fileInfo = str->fileInfo;
 //rcvMsg->sblNoMsg = str->sblNoMsg;
-       printf("\n SUCCESSFULLY TOKENIZED \n");
+	if (debug==1) {
+	       printf("\n SUCCESSFULLY TOKENIZED \n");
+	}
         return rcvMsg;
 }
 

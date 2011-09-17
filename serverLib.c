@@ -33,16 +33,69 @@ void joinResponse (struct msgToken *msgsock){
 	struct Msg *m;
 	char *m1,*m2;
 	str->keyID = randn();
-	m1=framePacket("200",str->keyID,NULL,NULL,NULL,&m);
+        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+        char *val[15] = {"200" , itoa(str->keyID),nodeToString(finger[0]),"NULL:NULL"};
+	m1=(char *)malloc(BLEN*sizeof(char));
+        utilFramePacket(attr,val,m1);
+	printf("joinResponse() : Packet : \n%s\n ",m1);
+	sendPkt(sock,m1);
+}
+
+struct Node *findSuccessorServer(int id) {
 }
 
 void getResponse (struct msgToken *msgsock){
 	int sock;
+	int i =0;
 	struct Msg* str;
+	struct Node *toContact;
+	char *m1;
+        m1=(char *)malloc(BLEN*sizeof(char));
 	str=token(msgsock->ptr);
 	sock=msgsock->sock;
 	printf("\nIt is in GETRESPONSE thread now...congo...2...\n");
+
+	if (finger[0]->keyID == finger[1]->keyID) {
+//For the first peer alone this condition will be true 
+                char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+                char *val[15] = {"200" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+                utilFramePacket(attr,val,m1);
+                printf("getResponse() : Packet : \n%s\n ",m1);
+                sendPkt(sock,m1);
+                return;
+	} else if (finger[0]->keyID < str->keyID &&  str->keyID <= finger[1]->keyID){
+//Found the actual successor . 
+	        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+	        char *val[15] = {"200" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+	        utilFramePacket(attr,val,m1);
+        	printf("getResponse() : Packet : \n%s\n ",m1);
+	        sendPkt(sock,m1);
+		return;
+        } else {
+             for (i=3; i>1; i--) {
+                        if (finger[i]->keyID < str->keyID ) {
+//Send shortcut contact node to the client.
+		                char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+                		char *val[15] = {"305" , itoa(finger[i]->keyID),nodeToString(finger[0]),nodeToString(finger[i])};
+                		utilFramePacket(attr,val,m1);
+		                printf("getResponse() : Packet : \n%s\n ",m1);
+                		sendPkt(sock,m1);
+				return;
+                        }
+                }
+	}
+
+//Send error msg . Server couldnt find successor or shortcut in its finger table
+	char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+	char *val[15] = {"500" , itoa(finger[0]->keyID),nodeToString(finger[0]),"0:0"};
+        utilFramePacket(attr,val,m1);
+        printf("getResponse() : Packet : \n%s\n ",m1);
+        sendPkt(sock,m1);
+        return;
+
+
 }
+
 
 void getrfcResponse (struct msgToken *msgsock){
 	int sock;
