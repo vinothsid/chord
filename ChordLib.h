@@ -72,3 +72,5 @@ int leave();//Yet to think about it.
 
 void initFingerTable();
 struct Msg* token(char *str);
+void rcvRFC(int sockfd, char *name );
+void sendRFC(int new_fd,char *name);
