@@ -68,7 +68,7 @@ int join();// Yet to think about it .
 
 struct Node* findSuccessorClient(int id);
 
-int leave();//Yet to think about it.
+int leave();//just added , modifications...suggest... 9/20/2011, 1:07pm
 
 void initFingerTable();
 struct Msg* token(char *str);

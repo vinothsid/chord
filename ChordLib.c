@@ -473,6 +473,40 @@ when the next nodes rcv that msg....it will check leaveStbNo. , if it is >=2 the
 
 this will prevent looping and infinite message sending loops. PlEASE COMMENT ANY SUGGESTIONS, I WILL WRITE A TEMP CODE FOR THIS ***********************/
 
+int leave(){ // making int to check if leave is successfull 
+	struct Msg *m1, *m2;
+	int sock;
+	char  *requestPkt,*requestPkt1;
+	char  *responsePkt,*responsePkt1;
+	requestPkt= framePacket("LEAVE",finger[0]->keyID,finger[0],pred,NULL,&m1);  // Leave not yet defined in switch cases at serverLib
+	// pred should be defined global ??? l
+	// leave response to be written ....
+	// in leave response if leaveStbNo is 0 then it checks if the host in msg is its pred then it will update pred with its contact node
+	// if the host in the msg is its succ then it updates its succ with the contact node	
+	sock = tcpConnect(finger[1]);
+	printf("Socket num : %d\n",sock);
+	if (sock < 0) {
+		perror("Socket connection failed");
+		exit(1);
+	}
+	sendPkt(sock,requestPkt);
+	close(sock);
+
+	requestPkt1= framePacket("LEAVE",finger[0]->keyID,finger[0],succ,NULL,&m2);  // Leave not yet defined in switch cases at serverLib
+	// pred should be defined global ??? l
+	// leave response to be written ....
+	// in leave response if leaveStbNo is 0 then it checks if the host in msg is its pred then it will update pred with its contact node
+	// if the host in the msg is its succ then it updates its succ with the contact node	
+	sock1 = tcpConnect(pred);
+	printf("Socket num : %d\n",sock1);
+	if (sock1 < 0) {
+		perror("Socket connection failed");
+		exit(1);
+	}
+	sendPkt(sock1,requestPkt1);
+	close(sock1);
+
+}
 
 
 
