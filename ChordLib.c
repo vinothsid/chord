@@ -114,7 +114,7 @@ struct Node* findSuccessorClient(int id){
 	}
 
 //The below statements execute only when all finger's keyID are not -1	
-	if (finger[0]->keyID < id &&  id <= finger[1]->keyID){
+	if (liesBetween(id, finger[0]->keyID , finger[1]->keyID)){
 		return finger[1];
 	} else {
 		for (i=3; i>=1; i--) {
@@ -751,4 +751,4 @@ void sendRFC(int new_fd,char *name) {
         close(new_fd);
 }
 	
-
+/********************************send RFC*****************************************/
