@@ -8,7 +8,7 @@ int main()
 	printf ("\nConnecting to the CHORD LIGHT SYSTEM.........");
 	printf ("\n CHORD LIGHT IS NOW LISTENING ");
 
-	initFingerTable(); //For peer 0 only this initFingerTable and following initialisation is needed. For all other peers it should be done in join
+	initFingerTable("127.0.0.1",5000); //For peer 0 only this initFingerTable and following initialisation is needed. For all other peers it should be done in join
         for (i=0; i<4; i++) {
                 strcpy(finger[i]->ipstr,origin->ipstr);
                 finger[i]->keyID=origin->keyID;
@@ -17,7 +17,15 @@ int main()
 
 	printf("Server main(): self address : %s self Port: %d\n",finger[0]->ipstr,finger[0]->port);
 
-	tcpServer();
-
+//	if (!fork()) {
+//		while(1) {
+//			sleep(5);
+//			printf("Stabilize thread\n");
+//			stabilize();
+//		}
+			
+//	} else {
+		tcpServer();
+//	}
 }
 

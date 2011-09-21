@@ -63,6 +63,14 @@ void getResponse (struct msgToken *msgsock){
                 printf("getResponse() : Packet : \n%s\n ",m1);
                 sendPkt(sock,m1);
                 return;
+	} else if (finger[1]->keyID ==0 && str->keyID > finger[0]->keyID  ) {
+//The node lies between last peer and peer 0
+                char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+                char *val[15] = {"200" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+                utilFramePacket(attr,val,m1);
+                printf("getResponse() : Packet : \n%s\n ",m1);
+                sendPkt(sock,m1);
+                return;
 	} else if (finger[0]->keyID < str->keyID &&  str->keyID <= finger[1]->keyID){
 //Found the actual successor . 
 	        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
@@ -75,7 +83,7 @@ void getResponse (struct msgToken *msgsock){
              for (i=3; i>1; i--) {
                         if (finger[i]->keyID < str->keyID ) {
 //Send shortcut contact node to the client.
-		                char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+                    char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
                 		char *val[15] = {"305" , itoa(finger[i]->keyID),nodeToString(finger[0]),nodeToString(finger[i])};
                 		utilFramePacket(attr,val,m1);
 		                printf("getResponse() : Packet : \n%s\n ",m1);
@@ -109,10 +117,60 @@ void getrfcResponse (struct msgToken *msgsock){
 void stabResponse (struct msgToken *msgsock){
 	int sock;
 	struct Msg* str;
+	char *m1;
+	m1=(char *)malloc(BLEN *sizeof (char));
 	str=token(msgsock->ptr);
 	sock=msgsock->sock;
 
-	printf("\nIt is in JOIN thread now...congo...4...\n");
+	printf("\nIt is in STAB thread now...congo...4...\n");
+	
+        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+
+	if (pred->keyID==-1) {
+        	char *val[15] = {"100" , itoa(pred->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
+        	utilFramePacket(attr,val,m1);
+	} else {
+	        char *val[15] = {"100" , itoa(pred->keyID),nodeToString(finger[0]),nodeToString(pred)};
+        	utilFramePacket(attr,val,m1);
+	}
+        printf("stabResponse() : Packet : \n%s\n ",m1);
+        sendPkt(sock,m1);
+        return;
+
+}
+
+void notifyResponse (struct msgToken *msgsock){
+        int sock;
+        struct Msg* str;
+        char *m1;
+        m1=(char *)malloc(BLEN *sizeof (char));
+        str=token(msgsock->ptr);
+        sock=msgsock->sock;
+
+        printf("\nIt is in Notify thread now...congo...4...\n");
+
+	if (pred->keyID==-1) {
+		pred->keyID=str->keyID;
+		strcpy(pred->ipstr,str->contactIP);
+		printf("\nThe contact port throwing error is %d\n\n",str->contactPort);
+       	       // pred->port=str->contactPort;
+	} else {
+		if(liesBetween(str->keyID,pred->keyID,finger[0]->keyID)==1) {
+				printf("Pred lies between its own pred and self\n");
+	                pred->keyID=str->keyID;
+	                strcpy(pred->ipstr,str->contactIP);
+        	 //       pred->port=str->contactPort;
+	
+		}
+	}
+        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+
+        char *val[15] = {"110" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
+        utilFramePacket(attr,val,m1);
+        printf("notifyResponse() : Packet : \n%s\n ",m1);
+        sendPkt(sock,m1);
+	printTable();
+        return;
 
 }
 
@@ -170,18 +228,18 @@ int Action(struct msgToken* msgsock){
 	printf("Action(): msgsock->ptr %s\n", msgsock->ptr);
         int n,ret;
 
-        char *msg1, *join,*get,*getrfc,*stablize;
+        char *msg1, *join,*get,*getrfc,*stablize,*notify;
         join="JOIN";
         get="GET";
         getrfc="GETRFC";
         stablize="STAB";
+	notify = "NOTIFY" ;
 
         /*DECISION SECTION*/
             		if(strcmp(gotMsg->method,join)==0){
                                 printf("A new node is joining......\n");
                                 joinResponse(msgsock);
                         }
-
                         if(strcmp(gotMsg->method,get)==0){
                                 printf("GET request received......\n");
                                 getResponse(msgsock);
@@ -196,6 +254,11 @@ int Action(struct msgToken* msgsock){
                                 printf("STABILIZING......\n");
                                 stabResponse(msgsock);
                         }
+                        if(strcmp(gotMsg->method,notify)==0){
+                                printf("Got Notify......\n");
+                                notifyResponse(msgsock);
+                        }
+
 	return 1;
 
 }

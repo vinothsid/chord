@@ -9,5 +9,8 @@ int main () {
    //printf("PKT: %s Port : %d",pkt,m1->hostPort);
    //printf("Vinoth");
 //   getKey(1011);
-   join();
+   join("127.0.0.1",4000);
+
+   stabilize();
+   printTable();
 }

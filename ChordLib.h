@@ -64,11 +64,11 @@ char *recvPkt(int sock); // Receives the pkt and returns it as a string.
 
 int action(struct Msg *m); //Takes action based on the values of struct Msg *m ,and returns 0 for pass and non-zero for failure.
 
-int join();// Yet to think about it .
+int join(char *ip,int port); //Called when a new peer is joining the Chord system
 
 struct Node* findSuccessorClient(int id);
 
 int leave();//Yet to think about it.
 
-void initFingerTable();
+void initFingerTable( char *ip,int port );
 struct Msg* token(char *str);

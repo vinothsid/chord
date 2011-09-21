@@ -90,16 +90,38 @@ struct Node* findSuccessorClient(int id){
         if (debug == 1 ) {
                 printf("findSuccessorClient()\n ");
         }
-*/	int i =0;
+*/
+/* TO DO : If all finger is nil , then return origin*/
+	int i =0;
+	int nilCounter=0;
+//If all fingers are nil , then return origin
+
+	for ( i=1;i<4;i++ ) {
+		if (finger[i]->keyID==-1) {
+			nilCounter++;
+		}
+		else {
+			printf("not -1 for index:%d\n",i);
+		}
+	}
+
+	printf("nilCounter : %d\n",nilCounter);
+	if ( nilCounter==3 ) {
+		return origin;
+	}
+
+//The below statements execute only when all finger's keyID are not -1	
 	if (finger[0]->keyID < id &&  id <= finger[1]->keyID){
-		finger[1]->port=5000;
-		strcpy(finger[1]->ipstr,"127.0.0.1");
 		return finger[1];
 	} else {
-		for (i=3; i>1; i--) {
+		for (i=3; i>=1; i--) {
+//If finger[i]->keyID is -1 ,continue the loop without returning . Finally the highest finger with proper value is returned in the if clause.(return finger[i])
+			if (finger[i]->keyID==-1) {
+				continue;
+			}
 			if (finger[i]->keyID < id ) {
-				finger[i]->port=5000;
-				strcpy(finger[i]->ipstr,"127.0.0.1");
+//				finger[i]->port=5000;
+//				strcpy(finger[i]->ipstr,"127.0.0.1");
 				return finger[i];
 			} 
 		}
@@ -109,7 +131,7 @@ struct Node* findSuccessorClient(int id){
 }
 /******************************************* INIT FINGER TABLE ***************************************/
 
-void initFingerTable(){
+void initFingerTable( char *ip,int port ){
 	int i;
 	if (debug ==1 ){
 		printf("initFingerTable()\n");
@@ -119,23 +141,29 @@ void initFingerTable(){
 	origin->keyID=0;
 	origin->port=5000;
 	pred->keyID=-1;
+	strcpy(pred->ipstr,"0.0.0.0");
+	pred->port=0;
 	strcpy(origin->ipstr,"127.0.0.1");
+
 	for (i=0; i<4; i++) {
 		finger[i]=(struct Node*)malloc(sizeof(struct Node));
 		finger[i]->keyID=-1;
 	}
-		
+
+//Initialise the self values
+	strcpy(finger[0]->ipstr,ip);
+	finger[0]->port = port;
 }
 
 /********************************************* JOIN **************************************************/
 
-int join (){
+int join (char *ip,int port) {
 	//struct Node n;
 	struct Msg *m1, *m2;
 	int sock;
 	char  *requestPkt;
 	char  *responsePkt;
-	initFingerTable();
+	initFingerTable(ip,port);
 	if (debug ==1 ) {
 		printf("join()\n");
 	}	
@@ -163,7 +191,8 @@ int join (){
 	finger[0]->sblNo = 0; //m2->sblNoMsg;
 	//Next instruction sets the successor of the current node
 
-	finger[1] = lookup(finger[0]->keyID + 1);
+	struct Node *temp = lookup(finger[0]->keyID + 1);
+	finger[1] = temp; 
 	if ( finger[1]==NULL ) {
 		perror("First finger is NULL\n");
 		exit(1);
@@ -226,6 +255,15 @@ printf("4444444444\n");
 	//end of old test code
 printf("4444444444\n");
 	n2 = findSuccessorClient(id);
+	if (n2==NULL) {
+		perror("Find Successor Client returned NULL");
+		exit(1);
+	}
+
+	if (debug==1) {
+		printf("lookup(): value returned from findSuccessorClient keyID: %d ip:%s port: %d\n",n2->keyID,n2->ipstr,n2->port);
+	}
+	
 	requestPkt=framePacket("GET",id, n2, finger[0], NULL, &m1);		
 //sleep(2);
 	sock = tcpConnect(n2);
@@ -464,3 +502,89 @@ struct Msg* token(char *str1)
         return rcvMsg;
 }
 
+int liesBetween(id,start,end) {
+	if (start<end) {
+		if( id > start && id <=end){
+			return 1;
+		} else {
+			return 0;
+		}
+	} else {
+		if ( id>start ) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+}
+
+void stabilize() {
+	char *requestPkt,*responsePkt;
+	struct Msg* m2;
+	int sock;
+        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+        char *val[15] = {"STAB" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+	requestPkt = (char *)malloc(BLEN*sizeof(char));
+
+        utilFramePacket(attr,val,requestPkt);
+        printf("stabilize() : Packet : \n%s\n ",requestPkt);
+
+	sock=tcpConnect(finger[1]);
+        sendPkt(sock,requestPkt);
+	
+        responsePkt=recvPkt(sock);
+        close(sock);
+        m2 = token(responsePkt);
+
+	if (strcmp(m2->method,"100")==0) {
+		if(debug==1) {
+			printf("Inside 100 response\n");
+		}
+		if ( liesBetween(m2->keyID,finger[0]->keyID,finger[1]->keyID)==1) {
+			if(debug==1) {
+				printf("Inside liesBetween\n");
+			}
+			finger[1]->keyID=m2->keyID;
+			strcpy(finger[1]->ipstr,m2->contactIP);
+			finger[1]->port=m2->contactPort;
+		}
+					
+	} else {
+		perror("stabilize(): unrecognised status code in this module\n");
+	}
+
+	notify();
+	
+}
+
+void notify() {
+        char *requestPkt,*responsePkt;
+        struct Msg* m2;
+        int sock;
+        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+        char *val[15] = {"NOTIFY" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
+        requestPkt = (char *)malloc(BLEN*sizeof(char));
+
+        utilFramePacket(attr,val,requestPkt);
+        printf("notify() : Packet : \n%s\n ",requestPkt);
+
+        sock=tcpConnect(finger[1]);
+        sendPkt(sock,requestPkt);
+
+        responsePkt=recvPkt(sock);
+        close(sock);
+        m2 = token(responsePkt);
+
+        if (strcmp(m2->method,"110")!=0) {
+		perror("notify(): unrecognised status code in this module\n");
+	}
+}
+
+
+void printTable() {
+	int i =0;
+	printf("Predecesor : KeyID : %d , IP : %s , Port %d\n ",pred->keyID,pred->ipstr,pred->port);
+	for (i=0;i<4;i++){
+		printf("Finger : %d KeyID: %d IP : %s , Port %d\n",i,finger[i]->keyID,finger[i]->ipstr,finger[i]->port);
+	}
+}
