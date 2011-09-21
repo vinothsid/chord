@@ -5,9 +5,17 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+
 #define PROTOCOL "CHORD"
 #define VERSION "1.0"
 #define BLEN 300
+#define back 10
 //int debug=1;
 //#define log(funcName,str,variable) if (debug ==1) { printf("
 //#define log(a,b,c) if(debug) printf("%s ... %s ... %s", a, b, c);
@@ -21,6 +29,11 @@ struct Node {
 	
 } *finger[4], *pred, *origin;
 
+struct msgToken {
+        char *ptr;
+        int sock;
+
+};
 
 
 
@@ -75,3 +88,7 @@ struct Msg* token(char *str);
 void stabilize() ;
 void notify() ;
 void printTable() ;
+
+void func(char *st);
+int tcpServer();
+
