@@ -475,7 +475,7 @@ this will prevent looping and infinite message sending loops. PlEASE COMMENT ANY
 
 int leave(){ // making int to check if leave is successfull 
 	struct Msg *m1, *m2;
-	int sock;
+	int sock,sock1;
 	char  *requestPkt,*requestPkt1;
 	char  *responsePkt,*responsePkt1;
 	requestPkt= framePacket("LEAVE",finger[0]->keyID,finger[0],pred,NULL,&m1);  // Leave not yet defined in switch cases at serverLib
@@ -492,7 +492,7 @@ int leave(){ // making int to check if leave is successfull
 	sendPkt(sock,requestPkt);
 	close(sock);
 
-	requestPkt1= framePacket("LEAVE",finger[0]->keyID,finger[0],succ,NULL,&m2);  // Leave not yet defined in switch cases at serverLib
+	requestPkt1= framePacket("LEAVE",finger[0]->keyID,finger[0],finger[1],NULL,&m2);  // Leave not yet defined in switch cases at serverLib
 	// pred should be defined global ??? l
 	// leave response to be written ....
 	// in leave response if leaveStbNo is 0 then it checks if the host in msg is its pred then it will update pred with its contact node
@@ -550,7 +550,7 @@ void rcvRFC(int sockfd, char *name ){
 	FILE *fp;
 	fp = fopen ( name , "w" );
 	char *buffer;
-	
+	int numbytes;
     while ((numbytes = recv(sockfd, buffer, 199,0)) >0) {
        //buffer=buffer+numbytes;
 	   //buffer[numbytes]='\0';
