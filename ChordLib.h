@@ -68,7 +68,10 @@ int join(char *ip,int port); //Called when a new peer is joining the Chord syste
 
 struct Node* findSuccessorClient(int id);
 
-int leave();//Yet to think about it.
+int leave();//just added , modifications...suggest... 9/20/2011, 1:07pm
 
 void initFingerTable( char *ip,int port );
 struct Msg* token(char *str);
+void stabilize() ;
+void notify() ;
+void printTable() ;

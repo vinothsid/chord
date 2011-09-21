@@ -501,7 +501,15 @@ struct Msg* token(char *str1)
 	}
         return rcvMsg;
 }
-
+/*************************** LEAVE ************************************************/
+/* frame work for LEAVE..sourabh & Vinoth please read and comment...... I have thinking of adding one more int field to header which would do the following
+as soon as a node leaves it will send out messages to pred and succ with a leaveStbNo=0.......... 
+Now, at the pred the leaveStbNo is checked and if it is 0 then, ....succ will update its pred.....pred will update its succ.
+then they will pass on the message to their succ and preds respectively after incrementing the leaveStbNo by 1
+Now their succ and pred will check the leaveStbNo. and if it is 1 then it will updates its finger[2] entries ...increment leaveStbNo by 1 and pass the msg.....
+when the next nodes rcv that msg....it will check leaveStbNo. , if it is >=2 then it will drop the message....................
+=======
+this will prevent looping and infinite message sending loops. PlEASE COMMENT ANY SUGGESTIONS, I WILL WRITE A TEMP CODE FOR THIS ***********************/
 int liesBetween(id,start,end) {
 	if (start<end) {
 		if( id > start && id <=end){
@@ -587,4 +595,4 @@ void printTable() {
 	for (i=0;i<4;i++){
 		printf("Finger : %d KeyID: %d IP : %s , Port %d\n",i,finger[i]->keyID,finger[i]->ipstr,finger[i]->port);
 	}
-}
+
