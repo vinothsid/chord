@@ -4,6 +4,9 @@
 extern struct Node* origin;
 extern struct Node* finger[4];
 
+int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,20,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
+
+char* RFCnames[50] = {"rfc4261","rfc3718","rfc1493","rfc3129","rfc2716","rfc4457","rfc2807","rfc1977","rfc2170","rfc1029","rfc3774","rfc1197","rfc4066","rfc4771","rfc2941","rfc1352","rfc4067","rfc5352","rfc4043","rfc3603","rfc5474","rfc5043","rfc5140","rfc3676","rfc2461","rfc3092","rfc1464","rfc1909","rfc2791","rfc2869","rfc3087","rfc4345","rfc3349","rfc3089","rfc5355","rfc5571","rfc3093","rfc2286","rfc3671","rfc3881","rfc5439","rfc1609","rfc1918","rfc4151","rfc1948","rfc4593","rfc1207","rfc4507","rfc4766","rfc4754"};
 
  int debug=1;
 /**************************** TCP CONNECT ****************************************/
@@ -315,7 +318,7 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 	int len;
 	len = strlen(pkt);
 	//pkt[len]=';';
-pkt[len] = '\n';
+	pkt[len] = '\n';
 	if (debug == 1) {
 		printf("utilFramePacket(): first line : %s\n", pkt);
 	}	
@@ -328,6 +331,7 @@ pkt[len] = '\n';
 		len = strlen(pkt);
         //	pkt[len]=';';
         	pkt[len] = '\n';
+		printf("The pkt until here is: %s\n", pkt);
 		i++;
 	}
 	len = strlen(pkt);
@@ -624,19 +628,31 @@ void notify() {
 
 /****************************************rcv RFC******************************/
 void rcvRFC(int sockfd, char *name ){
-	FILE *fp;
-	fp = fopen ( name , "w" );
-	char *buffer;
-	int numbytes;
-	while ((numbytes = recv(sockfd, buffer, 199,0)) >0) {
-        //buffer=buffer+numbytes;
-	   //buffer[numbytes]='\0';
-		fputs(buffer,fp);
-		printf("number of bytes..%d...",numbytes);
-		perror("recv");
-       // exit(1);
-	}
-	fclose(fp); 
+	FILE *wf;
+        wf=fopen(name,"wa");
+        
+	//Receive loop          
+        char *recBuf = (char *)malloc(300);
+        char *recBptr; //pointer to recBuf
+        int n;
+        int buflen;
+        recBptr=recBuf;
+        buflen=300;
+
+        printf("Received : \n");
+        while ((n=recv(sockfd,recBuf,buflen,0))>0) {
+     		fputs(recBuf,wf);
+
+        //	printf("%s",recBuf);
+        	if (n==300)
+                	memset(recBuf,0,300);
+	//	fflush(recBuf);
+		if (n<300)
+			close(sockfd);
+        }	
+        fclose(wf);
+        printf("Fclse done\n");
+	exit(1); 
 
 }
 
@@ -647,3 +663,92 @@ void printTable() {
 		printf("Finger : %d KeyID: %d IP : %s , Port %d\n",i,finger[i]->keyID,finger[i]->ipstr,finger[i]->port);
 	}
 }
+
+int triggerSingleRFC(int id) {
+	struct Node* rfcOwner;
+	rfcOwner=lookup(id);
+	getRFCrequest(id, rfcOwner);
+	return 1;
+
+}
+
+int getRFCresponsible() {
+	int i=0;
+	while(liesBetween(IDspace[i],finger[0]->keyID,finger[1]->keyID)){
+		getRFCrequest(IDspace[i], finger[1]);
+		i++;
+		if (i==50)
+			return 1;
+			break;
+	}
+	return 1;
+}
+
+
+
+int getRFCrequest(int id, struct Node* rfcOwner) {
+	int sock;
+	char* rfcDest;
+	char* requestPkt;
+	char* responsePkt;
+	//struct Node* rfcOwner;
+	//rfcOwner=lookup(id);
+	//rfcOwner=(struct Node*)malloc(sizeof(struct Node));
+	//strcpy(rfcOwner->ipstr,"127.0.0.1");
+	//rfcOwner->port=5000;
+	char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+        char *val[15] = {"GETRFC" , itoa(id), nodeToString(rfcOwner),nodeToString(rfcOwner)};
+        requestPkt = (char *)malloc(BLEN*sizeof(char));
+
+        utilFramePacket(attr,val,requestPkt);
+	sock = tcpConnect(rfcOwner);
+        if (sock==-1) {
+                perror ("Socket is not established properly");
+        }
+	free(rfcOwner);
+	rfcDest=findRFCfromID(id);
+	//requestPkt="hello\n";
+        sendPkt(sock,requestPkt);
+	printf("getRFCrequest(): A file of name %s will be created\n", rfcDest);
+	rcvRFC(sock, rfcDest);
+        close(sock);
+	return 1;	
+
+	
+}
+
+char* findRFCfromID (int id) {
+	int i=0;
+	while (id != IDspace[i]){
+		i++;
+	}
+	return RFCnames[i];
+}
+
+/********************************send RFC*****************************************/
+void sendRFC(int new_fd,char *name) {
+	FILE *rf;
+        int rlen;
+	char *send_data;
+        rf=fopen(name,"r");
+        send_data=(char *)malloc(300);
+        int i=2;
+        char seek[300];
+        //rlen=300;     
+        do {
+                memset(seek,0,300);
+                rlen=fread(seek,1,300,rf);
+                strcat(send_data,seek);
+                send_data=(char *)realloc(send_data, i*300);
+               i++;
+                printf("\nThe value of rlen is %d\n",rlen);
+        } while( rlen==300);
+	rlen=strlen(send_data);
+        send_data[rlen]='\0';
+	printf(send_data);
+	send(new_fd,send_data,strlen(send_data), 0);
+        free(send_data);
+        close(new_fd);
+}
+	
+

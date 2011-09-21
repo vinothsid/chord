@@ -9,8 +9,9 @@ int main () {
    //printf("PKT: %s Port : %d",pkt,m1->hostPort);
    //printf("Vinoth");
 //   getKey(1011);
-   join("127.0.0.1",4000);
-
-   stabilize();
-   printTable();
+  // join("127.0.0.1",4000);
+   printf ("The corresponding rfc is : %s\n",findRFCfromID(469));
+   getRFCrequest(165,finger[0]);
+	//stabilize();
+   //printTable();
 }
