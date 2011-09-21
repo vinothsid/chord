@@ -647,3 +647,39 @@ void printTable() {
 		printf("Finger : %d KeyID: %d IP : %s , Port %d\n",i,finger[i]->keyID,finger[i]->ipstr,finger[i]->port);
 	}
 }
+
+/********************************send RFC*****************************************/
+void sendRFC(int new_fd,char *name) {
+        FILE * pFile;
+        long lSize;
+        char * buffer;
+        size_t result;
+
+        pFile = fopen ( name , "rb" );
+        if (pFile==NULL) {fputs ("File error",stderr); exit (1);}
+
+  // obtain file size:
+        fseek (pFile , 0 , SEEK_END);
+        lSize = ftell (pFile);
+        rewind (pFile);
+
+  // allocate memory to contain the whole file:
+        buffer = (char*) malloc (sizeof(char)*lSize);
+        if (buffer == NULL) {fputs ("Memory error",stderr); exit (2);}
+
+  // copy the file into the buffer:
+        result = fread (buffer,1,lSize,pFile);
+        if (result != lSize) {fputs ("Reading error",stderr); exit (3);}
+        printf("Size is of %d and I sent %d",lSize,result);
+  /* the whole file is now loaded in the memory buffer. */
+
+  // terminate
+        fclose (pFile);
+
+
+            if (send(new_fd, buffer,lSize, 0) == -1)
+                perror("send");
+            close(new_fd);
+            exit(0);
+}
+
