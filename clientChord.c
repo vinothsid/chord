@@ -10,7 +10,9 @@ int main () {
    //printf("Vinoth");
 //   getKey(1011);
    join("127.0.0.1",4000);
-
-   stabilize();
-   printTable();
+   printf ("The corresponding rfc is : %s\n",findRFCfromID(469));
+   //getRFCrequest(604,finger[0]);
+   triggerSingleRFC(668);
+	//stabilize();
+   //printTable();
 }
