@@ -11,6 +11,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #define PROTOCOL "CHORD"
 #define VERSION "1.0"
@@ -99,3 +100,4 @@ int tcpServer();
 
 void sendRFC(int new_fd,char *name);
 char* findRFCfromID(int );//finds the RFC corresponding to an ID
+void *serverThread (void *parmPtr);

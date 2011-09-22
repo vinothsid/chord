@@ -1,8 +1,10 @@
 #include "ChordLib.h"
-
+#include <pthread.h>
 extern struct Node* origin;
 extern struct Node* finger[4];
-
+struct serverParm{
+	int sockDes;
+	};
 int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,20,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
 
 char* RFCnames[50] = {"rfc4261","rfc3718","rfc1493","rfc3129","rfc2716","rfc4457","rfc2807","rfc1977","rfc2170","rfc1029","rfc3774","rfc1197","rfc4066","rfc4771","rfc2941","rfc1352","rfc4067","rfc5352","rfc4043","rfc3603","rfc5474","rfc5043","rfc5140","rfc3676","rfc2461","rfc3092","rfc1464","rfc1909","rfc2791","rfc2869","rfc3087","rfc4345","rfc3349","rfc3089","rfc5355","rfc5571","rfc3093","rfc2286","rfc3671","rfc3881","rfc5439","rfc1609","rfc1918","rfc4151","rfc1948","rfc4593","rfc1207","rfc4507","rfc4766","rfc4754"};
@@ -976,7 +978,9 @@ int Action(struct msgToken* msgsock){
 
 
 int tcpServer(void)
-{
+{	pthread_t threadID[20];
+	struct serverParm *parmPtr;
+	int threadCount=0;	
 	char *msg1;
 	struct msgToken* msgsock;
 	int sockfd, new_fd, ret;  // listen on sock_fd, new connection on new_fd
@@ -1041,6 +1045,14 @@ int tcpServer(void)
 			perror("accept");
 			continue;
 		}
+
+		parmPtr = (struct serverParm *)malloc(sizeof(struct serverParm));
+		parmPtr->sockDes = new_fd;
+		if(pthread_create(&threadID[threadCount],NULL,serverThread,(void *)parmPtr)!=0){
+		printf("cannot create thread\n");
+		//close(new_fd);		
+		}
+/*
 		if (!fork()) { // this is the child process
 			close(sockfd); // child doesn't need the listener
 			msg1=malloc(BLEN);
@@ -1052,10 +1064,12 @@ int tcpServer(void)
 			Action(msgsock);
 			close(new_fd);
 			exit(0);
-		}
+		}*/
 		//close(new_fd);  // parent doesn't need this
-	}
+	threadCount = (threadCount+1)%20;
 
+	}
+	printf("IT IS GETTING OUT OF TCP SERVER\n");
 	return 0;
 }
 
@@ -1095,3 +1109,20 @@ void sendRFC(int new_fd,char *name) {
 }
 	
 /********************************send RFC*****************************************/
+
+void *serverThread (void *a){
+	struct serverParm *parmPtr;
+	parmPtr=a;
+		char *msg1;
+	struct msgToken* msgsock;
+	//close(sockfd); // child doesn't need the listener
+			msg1=malloc(BLEN);
+			msg1=recvPkt(parmPtr->sockDes);
+			msgsock =(struct msgToken*)malloc(sizeof(struct msgToken));
+        		msgsock->ptr=msg1;
+        		msgsock->sock=parmPtr->sockDes;
+			printf("The message msg1 is : %s\n", msg1);
+			Action(msgsock);
+			close(parmPtr->sockDes);
+			
+}
