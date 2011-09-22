@@ -16,7 +16,7 @@
 #define PROTOCOL "CHORD"
 #define VERSION "1.0"
 #define BLEN 300
-#define back 10
+#define LISTENQUEUE 10
 //int debug=1;
 //#define log(funcName,str,variable) if (debug ==1) { printf("
 //#define log(a,b,c) if(debug) printf("%s ... %s ... %s", a, b, c);

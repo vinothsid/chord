@@ -2,9 +2,7 @@
 #include <pthread.h>
 extern struct Node* origin;
 extern struct Node* finger[4];
-struct serverParm{
-	int sockDes;
-	};
+
 int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,20,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
 
 char* RFCnames[50] = {"rfc4261","rfc3718","rfc1493","rfc3129","rfc2716","rfc4457","rfc2807","rfc1977","rfc2170","rfc1029","rfc3774","rfc1197","rfc4066","rfc4771","rfc2941","rfc1352","rfc4067","rfc5352","rfc4043","rfc3603","rfc5474","rfc5043","rfc5140","rfc3676","rfc2461","rfc3092","rfc1464","rfc1909","rfc2791","rfc2869","rfc3087","rfc4345","rfc3349","rfc3089","rfc5355","rfc5571","rfc3093","rfc2286","rfc3671","rfc3881","rfc5439","rfc1609","rfc1918","rfc4151","rfc1948","rfc4593","rfc1207","rfc4507","rfc4766","rfc4754"};
@@ -977,9 +975,10 @@ int Action(struct msgToken* msgsock){
 }
 
 
-int tcpServer(void)
-{	pthread_t threadID[20];
-	struct serverParm *parmPtr;
+int tcpServer(struct Node *n)
+{	pthread_t threadID;
+//	struct serverParm *parmPtr;
+	int *serverFd;
 	int threadCount=0;	
 	char *msg1;
 	struct msgToken* msgsock;
@@ -995,7 +994,7 @@ int tcpServer(void)
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE; // use my IP
-	if ((rv = getaddrinfo(NULL,"5000", &hints, &servinfo)) != 0) {
+	if ((rv = getaddrinfo(NULL,itoa(n->port), &hints, &servinfo)) != 0) {
 
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 		return 1;
@@ -1022,7 +1021,7 @@ int tcpServer(void)
 
 	freeaddrinfo(servinfo); // all done with this structure
 
-	if (listen(sockfd,back) == -1) {
+	if (listen(sockfd,LISTENQUEUE) == -1) {
 		perror("listen");
 		exit(1);
 	}
@@ -1046,10 +1045,12 @@ int tcpServer(void)
 			continue;
 		}
 
-		parmPtr = (struct serverParm *)malloc(sizeof(struct serverParm));
-		parmPtr->sockDes = new_fd;
-		if(pthread_create(&threadID[threadCount],NULL,serverThread,(void *)parmPtr)!=0){
-		printf("cannot create thread\n");
+	//	parmPtr = (struct serverParm *)malloc(sizeof(struct serverParm));
+	//	parmPtr->sockDes = new_fd;
+		serverFd = (int *)malloc(sizeof(int));
+		*serverFd = new_fd;
+		if(pthread_create(&threadID,NULL,serverThread,(void *)serverFd)!=0){
+			printf("cannot create thread\n");
 		//close(new_fd);		
 		}
 /*
@@ -1066,7 +1067,7 @@ int tcpServer(void)
 			exit(0);
 		}*/
 		//close(new_fd);  // parent doesn't need this
-	threadCount = (threadCount+1)%20;
+		threadCount = (threadCount+1)%20;
 
 	}
 	printf("IT IS GETTING OUT OF TCP SERVER\n");
@@ -1111,18 +1112,22 @@ void sendRFC(int new_fd,char *name) {
 /********************************send RFC*****************************************/
 
 void *serverThread (void *a){
-	struct serverParm *parmPtr;
-	parmPtr=a;
-		char *msg1;
+//	struct serverParm *parmPtr;
+//	parmPtr=a;
+	char *msg1;
 	struct msgToken* msgsock;
+	int *temp = (int *)a;
+	int sockDesc = *temp;
+	printf("Socket descriptor : %d\n",sockDesc);
 	//close(sockfd); // child doesn't need the listener
-			msg1=malloc(BLEN);
-			msg1=recvPkt(parmPtr->sockDes);
-			msgsock =(struct msgToken*)malloc(sizeof(struct msgToken));
-        		msgsock->ptr=msg1;
-        		msgsock->sock=parmPtr->sockDes;
-			printf("The message msg1 is : %s\n", msg1);
-			Action(msgsock);
-			close(parmPtr->sockDes);
+	msg1=malloc(BLEN);
+	msg1=recvPkt(sockDesc);
+	msgsock =(struct msgToken*)malloc(sizeof(struct msgToken));
+        msgsock->ptr=msg1;
+        msgsock->sock=sockDesc;
+	printf("The message msg1 is : %s\n", msg1);
+	Action(msgsock);
+	close(sockDesc);
+	free(a);
 			
 }
