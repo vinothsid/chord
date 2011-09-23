@@ -14,7 +14,7 @@ void *PeerClient(void *newNode) {
 
 void *stabilizeThread() {
 	while(1) {
-		sleep(3);
+		sleep(8);
 		stabilize();
                 sleep(2);
                 fixFingers();

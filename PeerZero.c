@@ -16,7 +16,7 @@ void *PeerClient(void *newNode) {
 void *stabilizeThread() {
         while(1) {
 	if( totalPeers>0 ) {
-        	sleep(3);
+        	sleep(8);
                 stabilize();
 		sleep(2);
 		fixFingers();
@@ -59,6 +59,8 @@ int main()
 	pthread_create(&threadStabilize,NULL,stabilizeThread,NULL);
 
 	pthread_join(threadServer,NULL);
+	
+	pthread_join(threadStabilize,NULL);
 
 //	pthread_create(&threadClient,NULL,PeerClient,(void *)finger[0]);
 //	}

@@ -447,6 +447,7 @@ struct Msg* token(char *str1)
 
         struct Msg* rcvMsg;
         char str[300];
+	str[0]='\0';
         strcpy(str,str1);
 	if (debug==1) {
 	        printf("\nThis is the passed value :\n%s \n",str);
@@ -747,7 +748,9 @@ void joinResponse (struct msgToken *msgsock){
         utilFramePacket(attr,val,m1);
 	printf("joinResponse() : Packet : \n%s\n ",m1);
 	sendPkt(sock,m1);
+	close(sock);
 	totalPeers++;
+	printf("joinResponse(): totalPeers : %d\n",totalPeers);
 }
 
 struct Node *findSuccessorServer(int id) {
@@ -771,6 +774,7 @@ void getResponse (struct msgToken *msgsock){
                 utilFramePacket(attr,val,m1);
                 printf("getResponse() : Packet : \n%s\n ",m1);
                 sendPkt(sock,m1);
+		close(sock);
                 return;
 	} else if (finger[1]->keyID ==0 && str->keyID > finger[0]->keyID  ) {
 //The node lies between last peer and peer 0
@@ -779,6 +783,7 @@ void getResponse (struct msgToken *msgsock){
                 utilFramePacket(attr,val,m1);
                 printf("getResponse() : Packet : \n%s\n ",m1);
                 sendPkt(sock,m1);
+		close(sock);
                 return;
 	} else if (finger[0]->keyID < str->keyID &&  str->keyID <= finger[1]->keyID){
 //Found the actual successor . 
@@ -787,6 +792,7 @@ void getResponse (struct msgToken *msgsock){
 	        utilFramePacket(attr,val,m1);
         	printf("getResponse() : Packet : \n%s\n ",m1);
 	        sendPkt(sock,m1);
+		close(sock);
 		return;
         } else {
              for (i=3; i>1; i--) {
@@ -797,17 +803,18 @@ void getResponse (struct msgToken *msgsock){
                 		utilFramePacket(attr,val,m1);
 		                printf("getResponse() : Packet : \n%s\n ",m1);
                 		sendPkt(sock,m1);
+				close(sock);
 				return;
                         }
                 }
 	}
 
-//Send error msg . Server couldnt find successor or shortcut in its finger table
 	char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-	char *val[15] = {"500" , itoa(finger[0]->keyID),nodeToString(finger[0]),"0:0"};
+	char *val[15] = {"200" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
         utilFramePacket(attr,val,m1);
         printf("getResponse() : Packet : \n%s\n ",m1);
         sendPkt(sock,m1);
+	close(sock);
         return;
 
 
@@ -844,6 +851,7 @@ void stabResponse (struct msgToken *msgsock){
 	}
         printf("stabResponse() : Packet : \n%s\n ",m1);
         sendPkt(sock,m1);
+	close(sock);
         return;
 
 }
@@ -877,6 +885,7 @@ void notifyResponse (struct msgToken *msgsock){
         utilFramePacket(attr,val,m1);
         printf("notifyResponse() : Packet : \n%s\n ",m1);
         sendPkt(sock,m1);
+	close(sock);
 	printTable();
         return;
 
