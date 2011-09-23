@@ -9,7 +9,6 @@ void *PeerServer(void *newNodeServer ) {
 void *PeerClient(void *newNode) {
 	printf("Peer with server address : %s joining\n",nodeToString((struct Node *)newNode));
 	join(((struct Node *)newNode)->ipstr,((struct Node*)newNode)->port);
-	stabilize();
 }
 
 void *stabilizeThread() {

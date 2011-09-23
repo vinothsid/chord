@@ -21,7 +21,6 @@ void *stabilizeThread() {
 		sleep(2);
 		fixFingers();
                 printTable();
-		break;
 	}
         }
 }
