@@ -36,7 +36,7 @@ int main()
 	printf ("\n CHORD LIGHT IS NOW LISTENING ");
 
 	totalPeers=0;
-	initFingerTable("127.0.0.1",5000); //For peer 0 only this initFingerTable and following initialisation is needed. For all other peers it should be done in join
+	initFingerTable( PEER_ZERO_IP, PEER_ZERO_PORT); //For peer 0 only this initFingerTable and following initialisation is needed. For all other peers it should be done in join
         for (i=0; i<4; i++) {
                 strcpy(finger[i]->ipstr,origin->ipstr);
                 finger[i]->keyID=origin->keyID;

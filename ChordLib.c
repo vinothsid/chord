@@ -114,11 +114,11 @@ void initFingerTable( char *ip,int port ){
 	origin=(struct Node *)malloc(sizeof(struct Node));
 	pred=(struct Node *)malloc(sizeof(struct Node));
 	origin->keyID=0;
-	origin->port=5000;
+	origin->port=PEER_ZERO_PORT;
 	pred->keyID=-1;
 	strcpy(pred->ipstr,"0.0.0.0");
 	pred->port=0;
-	strcpy(origin->ipstr,"127.0.0.1");
+	strcpy(origin->ipstr,PEER_ZERO_IP);
 
 	for (i=0; i<4; i++) {
 		finger[i]=(struct Node*)malloc(sizeof(struct Node));
@@ -143,7 +143,7 @@ int join (char *ip,int port) {
 		printf("join()\n");
 	}	
 	pred->keyID=-1;
-	requestPkt= framePacket("JOIN",-1,NULL,NULL,NULL,&m1);
+	requestPkt= framePacket("JOIN",-1,finger[0],origin,NULL,&m1);
 	
 	sock = tcpConnect(origin);
 	printf("Socket num : %d\n",sock);
@@ -1163,7 +1163,7 @@ void fixFingers(){
         else
                 finger[4] = finger[3];*/
 
-        printf("3333333333\n");
+        printf("333454333333\n");
         return 0;
 
 }
