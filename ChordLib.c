@@ -5,7 +5,7 @@ extern struct Node* finger[4];
 extern int totalPeers;
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
-int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,20,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
+int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,205,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
 
 char* RFCnames[50] = {"rfc4261","rfc3718","rfc1493","rfc3129","rfc2716","rfc4457","rfc2807","rfc1977","rfc2170","rfc1029","rfc3774","rfc1197","rfc4066","rfc4771","rfc2941","rfc1352","rfc4067","rfc5352","rfc4043","rfc3603","rfc5474","rfc5043","rfc5140","rfc3676","rfc2461","rfc3092","rfc1464","rfc1909","rfc2791","rfc2869","rfc3087","rfc4345","rfc3349","rfc3089","rfc5355","rfc5571","rfc3093","rfc2286","rfc3671","rfc3881","rfc5439","rfc1609","rfc1918","rfc4151","rfc1948","rfc4593","rfc1207","rfc4507","rfc4766","rfc4754"};
 
@@ -640,6 +640,7 @@ void rcvRFC(int sockfd, char *name ){
 
         printf("Received : \n");
         while ((n=recv(sockfd,recBuf,buflen,0))>0) {
+		recBuf[n+1]='\0';
      		fputs(recBuf,wf);
 
         //	printf("%s",recBuf);
@@ -673,12 +674,12 @@ int triggerSingleRFC(int id) {
 
 int getRFCresponsible() {
 	int i=0;
-	while(liesBetween(IDspace[i],pred->keyID,finger[0]->keyID)){
-		getRFCrequest(IDspace[i], finger[1]);
-		i++;
-		if (i==50)
-			return 1;
+	for(i=0;i<50;i++) {
+		if (liesBetween(IDspace[i],pred->keyID,finger[0]->keyID))
+		{	
+			getRFCrequest(IDspace[i], finger[1]);
 			break;
+		}
 	}
 	return 1;
 }
