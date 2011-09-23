@@ -825,10 +825,14 @@ void getResponse (struct msgToken *msgsock){
 
 void getrfcResponse (struct msgToken *msgsock){
 	int sock;
+	char* id;
+	char path[50]="/home/hurricane/rfcDB/";
 	struct Msg* str;
 	str=token(msgsock->ptr);
 	sock=msgsock->sock;
-
+	id=findRFCfromID(str->keyID);
+	strcat(path,id);
+	sendRFC(sock,path);
 	printf("\nIt is in GETRFC thread now...congo...3...\n");
 }
 
