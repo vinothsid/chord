@@ -3,6 +3,7 @@
 extern struct Node* origin;
 extern struct Node* finger[4];
 extern int totalPeers;
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,20,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
 
@@ -444,7 +445,7 @@ char *recvPkt(int sock) {
 
 struct Msg* token(char *str1)
 {
-
+	pthread_mutex_lock( &mutex1 );
         struct Msg* rcvMsg;
         char str[300];
 	str[0]='\0';
@@ -488,6 +489,7 @@ struct Msg* token(char *str1)
 	if (debug==1) {
 	       printf("\n SUCCESSFULLY TOKENIZED \n");
 	}
+	pthread_mutex_unlock( &mutex1 );
         return rcvMsg;
 }
 /*************************** LEAVE ************************************************/
