@@ -17,7 +17,7 @@
 #define VERSION "1.0"
 #define BLEN 300
 #define LISTENQUEUE 10
-#define PEER_ZERO_IP "192.168.15.6"
+#define PEER_ZERO_IP "192.168.15.2"
 #define PEER_ZERO_PORT 5000
 //int debug=1;
 //#define log(funcName,str,variable) if (debug ==1) { printf("

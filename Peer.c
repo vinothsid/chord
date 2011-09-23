@@ -12,12 +12,17 @@ void *PeerClient(void *newNode) {
 }
 
 void *stabilizeThread() {
+	int stabCounter=0;
 	while(1) {
-		sleep(8);
+		sleep(4);
+		if (stabCounter ==3) {
+			getRFCresponsible();
+		}
 		stabilize();
                 sleep(2);
                 fixFingers();
 
+		stabCounter++;
 		printTable();
 	}
 }

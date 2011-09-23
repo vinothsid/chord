@@ -673,7 +673,7 @@ int triggerSingleRFC(int id) {
 
 int getRFCresponsible() {
 	int i=0;
-	while(liesBetween(IDspace[i],finger[0]->keyID,finger[1]->keyID)){
+	while(liesBetween(IDspace[i],pred->keyID,finger[0]->keyID)){
 		getRFCrequest(IDspace[i], finger[1]);
 		i++;
 		if (i==50)
@@ -696,7 +696,7 @@ int getRFCrequest(int id, struct Node* rfcOwner) {
 	//strcpy(rfcOwner->ipstr,"127.0.0.1");
 	//rfcOwner->port=5000;
 	char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-        char *val[15] = {"GETRFC" , itoa(id), nodeToString(rfcOwner),nodeToString(rfcOwner)};
+        char *val[15] = {"GETRFC" , itoa(id), nodeToString(finger[0]),nodeToString(rfcOwner)};
         requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
