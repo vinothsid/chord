@@ -21,6 +21,7 @@
 //#define log(funcName,str,variable) if (debug ==1) { printf("
 //#define log(a,b,c) if(debug) printf("%s ... %s ... %s", a, b, c);
 
+int totalPeers;
 struct Node {
 	int keyID;
 	char ipstr[INET6_ADDRSTRLEN];
@@ -101,3 +102,7 @@ int tcpServer();
 void sendRFC(int new_fd,char *name);
 char* findRFCfromID(int );//finds the RFC corresponding to an ID
 void *serverThread (void *parmPtr);
+
+char *itoa(int num); //converts integer to a character string, make sure to hold the return in a place holder and free it after use
+
+char *nodeToString(struct Node *n); //converts ip and port information of a host into a single contiguous string where ip and port are separated by a ":"

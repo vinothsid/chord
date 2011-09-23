@@ -13,15 +13,29 @@ void *PeerClient(void *newNode) {
 
 }
 
+void *stabilizeThread() {
+        while(1) {
+	if( totalPeers>0 ) {
+        	sleep(3);
+                stabilize();
+		sleep(2);
+		fixFingers();
+                printTable();
+		break;
+	}
+        }
+}
+
 int main()
 {
 	int i=0;
 	char *t;
-	pthread_t threadClient,threadServer;
+	pthread_t threadClient,threadServer,threadStabilize ;
 	printf("Hello how are you ??\n");
 	printf ("\nConnecting to the CHORD LIGHT SYSTEM.........");
 	printf ("\n CHORD LIGHT IS NOW LISTENING ");
 
+	totalPeers=0;
 	initFingerTable("127.0.0.1",5000); //For peer 0 only this initFingerTable and following initialisation is needed. For all other peers it should be done in join
         for (i=0; i<4; i++) {
                 strcpy(finger[i]->ipstr,origin->ipstr);
@@ -42,11 +56,14 @@ int main()
 //	} else {
 	pthread_create(&threadServer,NULL,PeerServer,(void *)finger[0]);
 
+	pthread_create(&threadStabilize,NULL,stabilizeThread,NULL);
+
 	pthread_join(threadServer,NULL);
 
 //	pthread_create(&threadClient,NULL,PeerClient,(void *)finger[0]);
 //	}
 
+	
 	
 }
 

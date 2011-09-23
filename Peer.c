@@ -10,15 +10,24 @@ void *PeerClient(void *newNode) {
 	printf("Peer with server address : %s joining\n",nodeToString((struct Node *)newNode));
 	join(((struct Node *)newNode)->ipstr,((struct Node*)newNode)->port);
 	stabilize();
-	printTable();
 }
 
+void *stabilizeThread() {
+	while(1) {
+		sleep(3);
+		stabilize();
+                sleep(2);
+                fixFingers();
+
+		printTable();
+	}
+}
 int main(int argc, char *argv[])
 {
 	int i=0;
 	char *t;
 	struct Node *selfNode;
-	pthread_t threadClient,threadServer;
+	pthread_t threadClient,threadServer,threadStabilize;
 	selfNode = (struct Node *)malloc(sizeof(struct Node));
 	strcpy(selfNode->ipstr,argv[1]);
 	selfNode->port = atoi(argv[2]);
@@ -40,7 +49,9 @@ int main(int argc, char *argv[])
 
 	pthread_create(&threadClient,NULL,PeerClient,(void *)selfNode);
 //	}
+	pthread_create(&threadStabilize,NULL,stabilizeThread,NULL);
 
+	
 	pthread_join(threadServer,NULL);	
 }
 

@@ -2,6 +2,7 @@
 #include <pthread.h>
 extern struct Node* origin;
 extern struct Node* finger[4];
+extern int totalPeers;
 
 int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,20,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
 
@@ -52,34 +53,6 @@ struct Msg* initMsg(){
         return pkt;
 }*/
 
-/************************* GET KEY ******************************************/
-
-
-struct Msg* getKey(short int id) {
-	struct Node *n;
-	struct Msg  *m1,*m2;
-        char *requestPkt,*responsePkt;
-	int sock;
-	n = lookup(id);	
-	requestPkt = framePacket("GET",id,n,NULL,NULL,&m1 );
-	sock = tcpConnect(n);
-	if (sock==-1) {
-		perror ("Socket is not established properly");
-        }
-	sendPkt(sock,requestPkt);	
-	responsePkt = recvPkt(sock);
-	if (debug == 1) {
-		printf("getKey() : Response Pkt : %s\n",responsePkt);
-	}
-	close(sock);
-	//m2 = tokenize(responsePkt);//to be used later	*/	
-	//return m2;
-}
-
-/**********************************Tokenize also defined in serverLib.c ************************************/
-struct Msg* tokenize(char* pkt) {
-
-}
 /**************************************************************************************/
 
 
@@ -266,7 +239,7 @@ printf("4444444444\n");
 		printf("lookup(): value returned from findSuccessorClient keyID: %d ip:%s port: %d\n",n2->keyID,n2->ipstr,n2->port);
 	}
 	
-	requestPkt=framePacket("GET",id, n2, finger[0], NULL, &m1);		
+	requestPkt=framePacket("GET",id, finger[0], n2, NULL, &m1);		
 //sleep(2);
 	sock = tcpConnect(n2);
 	sendPkt(sock, requestPkt);
@@ -280,7 +253,7 @@ printf("4444444444\n");
 	while (strcmp(m2->method,"305")==0) {
 		strcpy(n3->ipstr, m2->contactIP);
 		n3->port = m2->contactPort;
-		requestPkt = framePacket("GET", id, n3, finger[0],NULL, &m1);
+		requestPkt = framePacket("GET", id, finger[0], n3,NULL, &m1);
 		sock = tcpConnect(n3);
 		sendPkt(sock, requestPkt);
 		responsePkt=recvPkt(sock);
@@ -330,11 +303,13 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 		len = strlen(pkt);
         //	pkt[len]=';';
         	pkt[len] = '\n';
+		pkt[len+1]='\0';
 		printf("The pkt until here is: %s\n", pkt);
 		i++;
 	}
 	len = strlen(pkt);
-        	pkt[len+1] = '\n';
+       	pkt[len+1] = '\n';
+       	pkt[len+2] = '\0';
 		
 	if (debug ==1 ){
 		printf("utilFramePacket() :Packet : \n%s%d\n", pkt,len);
@@ -356,14 +331,24 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 		free(tempHost);
 	} 
 	else 
-		strcpy(host,"anonymous:6060");
+		strcpy(host,"anonymous:0");
 	//strcpy(contact,nodeToString(contactNode));
+        if (contactNode != NULL) {
+                tempHost = (char *)nodeToString(contactNode);
+                strcpy(contact,tempHost);
+                free(tempHost);
+        }
+        else
+                strcpy(contact,"anonymous:0");
+        //strcpy(contact,nodeToString(contactNode));
+
+
 	if (debug == 1 ) {
 		printf("framePacket() : Host : %s\n ",host);
 	}
 	if (payload ==NULL) {
 		char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-		char *val[15] = {method , itoa(keyID),host,"contact:8080"}; 
+		char *val[15] = {method , itoa(keyID),host,contact}; 
 		printf("after val\n");	
 		pkt = (char *)malloc(BLEN*sizeof(char));
 		utilFramePacket(attr,val,pkt);
@@ -567,6 +552,11 @@ void stabilize() {
 	char *requestPkt,*responsePkt;
 	struct Msg* m2;
 	int sock;
+//	if (finger[0]->keyID==finger[1]->keyID) {
+//		printf("stabilize(): Successor and self are same \n");
+//		return;
+//	}
+
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
         char *val[15] = {"STAB" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
 	requestPkt = (char *)malloc(BLEN*sizeof(char));
@@ -599,13 +589,20 @@ void stabilize() {
 	}
 
 	notify();
-	
+
+	printTable();	
 }
 
 void notify() {
         char *requestPkt,*responsePkt;
         struct Msg* m2;
         int sock;
+
+ //       if (finger[0]->keyID==finger[1]->keyID) {
+ //               printf("notify(): Successor and self are same \n");
+  //              return;
+  //      }
+
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
         char *val[15] = {"NOTIFY" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
         requestPkt = (char *)malloc(BLEN*sizeof(char));
@@ -750,6 +747,7 @@ void joinResponse (struct msgToken *msgsock){
         utilFramePacket(attr,val,m1);
 	printf("joinResponse() : Packet : \n%s\n ",m1);
 	sendPkt(sock,m1);
+	totalPeers++;
 }
 
 struct Node *findSuccessorServer(int id) {
@@ -863,14 +861,13 @@ void notifyResponse (struct msgToken *msgsock){
 	if (pred->keyID==-1) {
 		pred->keyID=str->keyID;
 		strcpy(pred->ipstr,str->contactIP);
-		printf("\nThe contact port throwing error is %d\n\n",str->contactPort);
-       	       // pred->port=str->contactPort;
+       	        pred->port=str->contactPort;
 	} else {
 		if(liesBetween(str->keyID,pred->keyID,finger[0]->keyID)==1) {
 				printf("Pred lies between its own pred and self\n");
 	                pred->keyID=str->keyID;
 	                strcpy(pred->ipstr,str->contactIP);
-        	 //       pred->port=str->contactPort;
+        	        pred->port=str->contactPort;
 	
 		}
 	}
@@ -976,7 +973,7 @@ int Action(struct msgToken* msgsock){
 
 
 int tcpServer(struct Node *n)
-{	pthread_t threadID;
+{	pthread_t threadID[20];
 //	struct serverParm *parmPtr;
 	int *serverFd;
 	int threadCount=0;	
@@ -1049,7 +1046,7 @@ int tcpServer(struct Node *n)
 	//	parmPtr->sockDes = new_fd;
 		serverFd = (int *)malloc(sizeof(int));
 		*serverFd = new_fd;
-		if(pthread_create(&threadID,NULL,serverThread,(void *)serverFd)!=0){
+		if(pthread_create(&threadID[threadCount],NULL,serverThread,(void *)serverFd)!=0){
 			printf("cannot create thread\n");
 		//close(new_fd);		
 		}
@@ -1131,3 +1128,68 @@ void *serverThread (void *a){
 	free(a);
 			
 }
+
+void fixFingers(){
+       struct Node *temp = lookup(finger[0]->keyID + 1);
+        finger[1] = temp;
+        if ( finger[1]==NULL ) {
+                perror("First finger is NULL\n");
+                exit(1);
+        }
+        printf("\n1111111111\n");
+
+        if (debug==1) {
+                printf("join() : Actual Successor info: %s , keyID : %d",nodeToString(finger[1]),finger[1]->keyID);
+        }
+        //Set of instructions that set the finger table
+        //Each time a lookup is performed a check is performed to check if 
+        //the current finger is also the next finger
+        if (finger[1]->keyID < (finger[0]->keyID + 2)) {
+                printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
+                finger[2] = lookup((finger[0]->keyID + 2));
+        }
+        else
+                finger[2] = finger[1];
+        printf("2222222\n");
+        if (finger[2]->keyID < (finger[0]->keyID + 4)) {
+                printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
+                finger[3] = lookup((finger[0]->keyID + 4));
+        }
+        else
+                finger[3] = finger[2];
+       /* if (finger[3]->keyID < (finger[0]->keyID + 8)) {
+                finger[4] = lookup((finger[0]->keyID + 8));
+        }
+        else
+                finger[4] = finger[3];*/
+
+        printf("3333333333\n");
+        return 0;
+
+}
+
+char *itoa(int num) {
+        char *str;
+        str = (char *)malloc(5);
+        sprintf(str,"%d",num);
+        return str;
+}
+char *nodeToString(struct Node *n) {
+        char *ipPortStr = (char *)malloc(INET6_ADDRSTRLEN + 10);
+        char *portStr;
+        strcpy(ipPortStr,n->ipstr);
+        strcat(ipPortStr,":");
+
+        portStr = itoa(n->port);
+        if (debug == 1) {
+                printf("nodeToString() :From itoa IP String : %s ipPortStr : %s\n",portStr,ipPortStr);
+        }
+        strcat(ipPortStr,portStr);
+        free(portStr);
+        if (debug == 1) {
+                printf("nodeToString(): IP String : %s\n",ipPortStr);
+        }
+        return ipPortStr;
+}
+
+
