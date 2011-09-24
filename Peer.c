@@ -1,6 +1,8 @@
 #include "ChordLib.h"
 #include<pthread.h>
 
+pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
+
 void *PeerServer(void *newNodeServer ) {
 
 	tcpServer((struct Node *)newNodeServer );
@@ -12,9 +14,10 @@ void *PeerClient(void *newNode) {
 }
 
 void *stabilizeThread() {
+	pthread_mutex_lock( &mutex3 );
 	int stabCounter=0;
 	while(1) {
-		sleep(4);
+		sleep(2);
 		if (stabCounter ==3) {
 			getRFCresponsible();
 		}
@@ -24,6 +27,7 @@ void *stabilizeThread() {
 
 		stabCounter++;
 		printTable();
+	pthread_mutex_unlock( &mutex3 );
 	}
 }
 int main(int argc, char *argv[])

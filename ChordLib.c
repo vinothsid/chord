@@ -4,6 +4,7 @@ extern struct Node* origin;
 extern struct Node* finger[4];
 extern int totalPeers;
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 
 int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,205,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
 
@@ -292,6 +293,7 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 	len = strlen(pkt);
 	//pkt[len]=';';
 	pkt[len] = '\n';
+	pkt[len+1]='\0';
 	if (debug == 1) {
 		printf("utilFramePacket(): first line : %s\n", pkt);
 	}	
@@ -652,7 +654,7 @@ void rcvRFC(int sockfd, char *name ){
         }	
         fclose(wf);
         printf("Fclse done\n");
-	exit(1); 
+	close(sockfd); 
 
 }
 
@@ -678,7 +680,7 @@ int getRFCresponsible() {
 		if (liesBetween(IDspace[i],pred->keyID,finger[0]->keyID))
 		{	
 			getRFCrequest(IDspace[i], finger[1]);
-			break;
+			//break;
 		}
 	}
 	return 1;
@@ -705,7 +707,7 @@ int getRFCrequest(int id, struct Node* rfcOwner) {
         if (sock==-1) {
                 perror ("Socket is not established properly");
         }
-	free(rfcOwner);
+	//free(rfcOwner);
 	rfcDest=findRFCfromID(id);
 	//requestPkt="hello\n";
         sendPkt(sock,requestPkt);
@@ -1098,28 +1100,37 @@ char* findRFCfromID (int id) {
 
 /********************************send RFC*****************************************/
 void sendRFC(int new_fd,char *name) {
+	pthread_mutex_lock( &mutex2 );
 	FILE *rf;
         int rlen;
-	char *send_data;
+//	char *send_data='\0';
         rf=fopen(name,"r");
-        send_data=(char *)malloc(300);
+ //       send_data=(char *)malloc(300);
         int i=2;
         char seek[300];
-        //rlen=300;     
-        do {
+        rlen=300;     
+       	do {
                 memset(seek,0,300);
                 rlen=fread(seek,1,300,rf);
-                strcat(send_data,seek);
-                send_data=(char *)realloc(send_data, i*300);
-               i++;
+		seek[300]='\0';
+             	//strcat(send_data,seek);
+                //send_data=(char *)realloc(send_data, i*600*sizeof(char));
+		send(new_fd,seek,strlen(seek), 0);
+               //	i++;
                 printf("\nThe value of rlen is %d\n",rlen);
         } while( rlen==300);
-	rlen=strlen(send_data);
-        send_data[rlen]='\0';
-	printf(send_data);
-	send(new_fd,send_data,strlen(send_data), 0);
-        free(send_data);
-        close(new_fd);
+//	rlen=strlen(send_data);
+	printf("\nThe value of rlen is %d\n",rlen);
+        //send_data[rlen]='\0';
+//	printf(send_data);
+	//send(new_fd,send_data,strlen(send_data), 0);
+        sleep(2);
+	memset(seek,0,300);
+//	memset(send_data,0,strlen(send_data));
+//	free(send_data);
+      	close(new_fd);	
+	pthread_mutex_unlock( &mutex2 ); 
+	
 }
 	
 /********************************send RFC*****************************************/
