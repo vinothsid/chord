@@ -3,8 +3,10 @@
 extern struct Node* origin;
 extern struct Node* finger[4];
 extern int totalPeers;
+extern int leaveFlag;
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t tableMutex = PTHREAD_MUTEX_INITIALIZER;
 
 int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,205,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
 
@@ -30,7 +32,7 @@ int tcpConnect(struct Node* n) {
 	memset(&(server_addr.sin_zero), 0, sizeof server_addr.sin_zero);
 
 	if (connect(sock, (struct sockaddr *)&server_addr,sizeof(struct sockaddr)) == -1) {
-           perror("Connection could not be opened");
+           printf("Connection could not be opened. Connection to port %d failed\n ",n->port );
            exit(1);
          }
 	
@@ -108,7 +110,7 @@ struct Node* findSuccessorClient(int id){
 }
 /******************************************* INIT FINGER TABLE ***************************************/
 
-void initFingerTable( char *ip,int port ){
+void initFingerTable( char *ip,int port ) {
 	int i;
 	if (debug ==1 ){
 		printf("initFingerTable()\n");
@@ -130,6 +132,8 @@ void initFingerTable( char *ip,int port ){
 //Initialise the self values
 	strcpy(finger[0]->ipstr,ip);
 	finger[0]->port = port;
+
+	leaveFlag=0;
 }
 
 /********************************************* JOIN **************************************************/
@@ -182,6 +186,8 @@ int join (char *ip,int port) {
 	//Set of instructions that set the finger table
 	//Each time a lookup is performed a check is performed to check if 
 	//the current finger is also the next finger
+
+/* Vinoth: Commented out since it will be done in fixFingers
 	if (finger[1]->keyID < (finger[0]->keyID + 2)) {
 		printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
 		finger[2] = lookup((finger[0]->keyID + 2));
@@ -194,12 +200,15 @@ int join (char *ip,int port) {
                 finger[3] = lookup((finger[0]->keyID + 4));
         }
         else
-                finger[3] = finger[2];
-       /* if (finger[3]->keyID < (finger[0]->keyID + 8)) {
-                finger[4] = lookup((finger[0]->keyID + 8));
-        }
-        else
-                finger[4] = finger[3];*/
+                finger[3] = finger[2]; 
+
+*/
+
+//When following free statements are executed , its seg faulting
+	//free(requestPkt);
+	//free(responsePkt);
+	//free(m1);
+	//free(m2);
 
 	printf("3333333333\n");
 	return 0;
@@ -275,9 +284,21 @@ printf("4444444444\n");
 		if (debug==1) {
 			printf("lookup() : Actual Successor info : %s , keyId: %d\n\n",nodeToString(n),n->keyID);
 		}
+
+//When following free statements are executed seg fault occuring
+	//	free(requestPkt);
+	//	free(responsePkt);
+	//	free(m1);
+	//	free(m2);
 		return n;
 
 	}
+
+//When following free statements are executed seg fault occuring
+//	free(requestPkt);
+//	free(responsePkt);
+//	free(m1);
+//	free(m2);
 	return NULL;
 }
 
@@ -318,7 +339,7 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 		printf("utilFramePacket() :Packet : \n%s%d\n", pkt,len);
 
 	}
-	return 4;	
+	return 0;	
 }
 
 /************************************ Frame Packet *********************************************/
@@ -488,6 +509,20 @@ struct Msg* token(char *str1)
         rcvMsg->sblNoMsg=0;
 //rcvMsg->fileInfo = str->fileInfo;
 //rcvMsg->sblNoMsg = str->sblNoMsg;
+	if ( strcmp(rcvMsg->method,"LEAVE" ) == 0 ) {
+	        p=strtok(NULL," /:;'\n'");
+		rcvMsg->succID=atoi(p);
+	} else {
+		rcvMsg->succID=-1;
+	}
+
+        if ( strcmp(rcvMsg->method,"PUTKEY" ) == 0 ) {
+                p=strtok(NULL," /:;'\n'");
+                rcvMsg->predID=atoi(p);
+        } else {
+                rcvMsg->predID=-1;
+        }
+
 	if (debug==1) {
 	       printf("\n SUCCESSFULLY TOKENIZED \n");
 	}
@@ -520,16 +555,85 @@ int liesBetween(id,start,end) {
 	}
 }
 
-int leave(){ // making int to check if leave is successfull 
-	struct Msg *m1, *m2;
-	int sock,sock1;
-	char  *requestPkt,*requestPkt1;
-	char  *responsePkt,*responsePkt1;
-	requestPkt= framePacket("LEAVE",finger[0]->keyID,finger[0],pred,NULL,&m1);  // Leave not yet defined in switch cases at serverLib
+int putKey() {
+        struct Msg *m1 ;
+        int sock;
+        char  *requestPkt;
+        char  *responsePkt;
+        // pred should be defined global ??? l
+        // leave response to be written ....
+        // in leave response if leaveStbNo is 0 then it checks if the host in msg is its pred then it will update pred with its contact node
+        // if the host in the msg is its succ then it updates its succ with the contact node
+
+        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT","PRED.ID" } ;
+        char *val[15] = {"PUTKEY" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(pred),itoa(pred->keyID)};
+        requestPkt = (char *)malloc(BLEN*sizeof(char));
+
+        utilFramePacket(attr,val,requestPkt);
+        printf("putKey() : Packet : \n%s\n ",requestPkt);
+
+        sock=tcpConnect(finger[1]);
+        sendPkt(sock,requestPkt);
+	
+        responsePkt=recvPkt(sock);
+        close(sock);
+
+        m1 = token(responsePkt);
+
+        if (strcmp(m1->method,"240") ) {
+		free(requestPkt);
+		free(m1);	
+		free(responsePkt);
+                printf("Acknowledgement for putKey is received\n");
+		return 0;
+        } else {
+		free(requestPkt);
+		free(m1);	
+		free(responsePkt);
+                perror("Error: Ack for putKey is not received\n");
+		return -1;
+        }
+
+
+}
+
+int leave() { // making int to check if leave is successfull 
+	struct Msg *m1 ;
+	int sock;
+	char  *requestPkt;
+	char  *responsePkt;
 	// pred should be defined global ??? l
 	// leave response to be written ....
 	// in leave response if leaveStbNo is 0 then it checks if the host in msg is its pred then it will update pred with its contact node
-	// if the host in the msg is its succ then it updates its succ with the contact node	
+	// if the host in the msg is its succ then it updates its succ with the contact node
+	leaveFlag=1;
+
+        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT","SUCC.ID" } ;
+        char *val[15] = {"LEAVE" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[1]),itoa(finger[1]->keyID)};
+        requestPkt = (char *)malloc(BLEN*sizeof(char));
+
+        utilFramePacket(attr,val,requestPkt);
+        printf("leave() : Packet : \n%s\n ",requestPkt);
+
+        sock=tcpConnect(pred);
+        sendPkt(sock,requestPkt);
+
+        responsePkt=recvPkt(sock);
+        close(sock);
+	free(requestPkt);
+
+        m1 = token(responsePkt);
+
+	if (strcmp(m1->method,"230") ) {
+		printf("Acknowledgement for Leave is received\n");
+	} else {
+		printf("Warning: Ack for Leave is not received\n");
+	}
+
+	free(responsePkt);
+	free(m1);
+	return putKey();
+/*	
 	sock = tcpConnect(finger[1]);
 	printf("Socket num : %d\n",sock);
 	if (sock < 0) {
@@ -551,6 +655,7 @@ int leave(){ // making int to check if leave is successfull
 	}
 	sendPkt(sock1,requestPkt1);
 	close(sock1);
+*/
 }
 
 void stabilize() {
@@ -584,15 +689,23 @@ void stabilize() {
 			if(debug==1) {
 				printf("Inside liesBetween\n");
 			}
+       			pthread_mutex_lock(&tableMutex);
+
 			finger[1]->keyID=m2->keyID;
 			strcpy(finger[1]->ipstr,m2->contactIP);
 			finger[1]->port=m2->contactPort;
+
+       			pthread_mutex_unlock(&tableMutex);
+			
 		}
 					
 	} else {
 		perror("stabilize(): unrecognised status code in this module\n");
 	}
 
+	free(requestPkt);
+	free(responsePkt);
+	free(m2);
 	notify();
 
 	printTable();	
@@ -625,6 +738,9 @@ void notify() {
         if (strcmp(m2->method,"110")!=0) {
 		perror("notify(): unrecognised status code in this module\n");
 	}
+	free(requestPkt);
+	free(responsePkt);
+	free(m2);
 }
 
 /****************************************rcv RFC******************************/
@@ -656,6 +772,7 @@ void rcvRFC(int sockfd, char *name ){
         printf("Fclse done\n");
 	close(sockfd); 
 
+	free(recBuf);
 }
 
 void printTable() {
@@ -675,18 +792,23 @@ int triggerSingleRFC(int id) {
 }
 
 int getRFCresponsible() {
-	int i=0;
-	for(i=0;i<50;i++) {
-		if (liesBetween(IDspace[i],pred->keyID,finger[0]->keyID))
-		{	
-			getRFCrequest(IDspace[i], finger[1]);
-			//break;
-		}
-	}
-	return 1;
+
+	return getRFCBetween(pred->keyID,finger[0]->keyID,finger[1]);
 }
 
+int getRFCBetween(int start,int end,struct Node *n ) {
+        int i=0;
+        for(i=0;i<50;i++) {
+                if (liesBetween(IDspace[i],start,end))
+                {
+                        getRFCrequest(IDspace[i], n );
+                        //break;
+                }
+        }
+        return 1;
 
+
+}
 
 int getRFCrequest(int id, struct Node* rfcOwner) {
 	int sock;
@@ -714,6 +836,7 @@ int getRFCrequest(int id, struct Node* rfcOwner) {
 	printf("getRFCrequest(): A file of name %s will be created\n", rfcDest);
 	rcvRFC(sock, rfcDest);
         close(sock);
+	free(requestPkt);
 	return 1;	
 
 	
@@ -756,6 +879,7 @@ void joinResponse (struct msgToken *msgsock){
 	close(sock);
 	totalPeers++;
 	printf("joinResponse(): totalPeers : %d\n",totalPeers);
+	free(m1);
 }
 
 struct Node *findSuccessorServer(int id) {
@@ -820,6 +944,8 @@ void getResponse (struct msgToken *msgsock){
         printf("getResponse() : Packet : \n%s\n ",m1);
         sendPkt(sock,m1);
 	close(sock);
+	free(m1);
+	free(str);
         return;
 
 
@@ -829,7 +955,7 @@ void getResponse (struct msgToken *msgsock){
 void getrfcResponse (struct msgToken *msgsock){
 	int sock;
 	char* id;
-	char path[50]="/home/hurricane/rfcDB/";
+	char path[50]= RFC_PATH ;
 	struct Msg* str;
 	str=token(msgsock->ptr);
 	sock=msgsock->sock;
@@ -837,6 +963,7 @@ void getrfcResponse (struct msgToken *msgsock){
 	strcat(path,id);
 	sendRFC(sock,path);
 	printf("\nIt is in GETRFC thread now...congo...3...\n");
+	free(str);
 }
 
 void stabResponse (struct msgToken *msgsock){
@@ -861,6 +988,9 @@ void stabResponse (struct msgToken *msgsock){
         printf("stabResponse() : Packet : \n%s\n ",m1);
         sendPkt(sock,m1);
 	close(sock);
+
+	free(m1);
+	free(str);
         return;
 
 }
@@ -875,6 +1005,8 @@ void notifyResponse (struct msgToken *msgsock){
 
         printf("\nIt is in Notify thread now...congo...4...\n");
 
+        pthread_mutex_lock(&tableMutex);
+
 	if (pred->keyID==-1) {
 		pred->keyID=str->keyID;
 		strcpy(pred->ipstr,str->contactIP);
@@ -888,6 +1020,9 @@ void notifyResponse (struct msgToken *msgsock){
 	
 		}
 	}
+
+        pthread_mutex_unlock(&tableMutex);
+
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 
         char *val[15] = {"110" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
@@ -896,6 +1031,8 @@ void notifyResponse (struct msgToken *msgsock){
         sendPkt(sock,m1);
 	close(sock);
 	printTable();
+	free(m1);
+	free(str);
         return;
 
 }
@@ -954,36 +1091,52 @@ int Action(struct msgToken* msgsock){
 	printf("Action(): msgsock->ptr %s\n", msgsock->ptr);
         int n,ret;
 
-        char *msg1, *join,*get,*getrfc,*stablize,*notify;
+        char *msg1, *join,*get,*getrfc,*stablize,*notify,*leaveMethod,*putKey,*goHome;
         join="JOIN";
         get="GET";
         getrfc="GETRFC";
         stablize="STAB";
 	notify = "NOTIFY" ;
+	leaveMethod = "LEAVE" ;
+	goHome="GOHOME";
+	putKey="PUTKEY";
 
         /*DECISION SECTION*/
             		if(strcmp(gotMsg->method,join)==0){
                                 printf("A new node is joining......\n");
                                 joinResponse(msgsock);
                         }
-                        if(strcmp(gotMsg->method,get)==0){
+                        else if(strcmp(gotMsg->method,get)==0){
                                 printf("GET request received......\n");
                                 getResponse(msgsock);
                         }
-
-                        if(strcmp(gotMsg->method,getrfc)==0){
+                        else if(strcmp(gotMsg->method,getrfc)==0){
                                 printf("Sending RFC......\n");
                                 getrfcResponse(msgsock);
                         }
-
-                        if(strcmp(gotMsg->method,stablize)==0){
+                        else if(strcmp(gotMsg->method,stablize)==0){
                                 printf("STABILIZING......\n");
                                 stabResponse(msgsock);
                         }
-                        if(strcmp(gotMsg->method,notify)==0){
+                        else if(strcmp(gotMsg->method,notify)==0){
                                 printf("Got Notify......\n");
                                 notifyResponse(msgsock);
                         }
+                        else if(strcmp(gotMsg->method,leaveMethod )==0){
+                                printf("Got leave......\n");
+                                leaveResponse(msgsock);
+                        }
+                        else if(strcmp(gotMsg->method,putKey)==0){
+                                printf("Got putkey......\n");
+                                putKeyResponse(msgsock);
+                        }
+                        else if(strcmp(gotMsg->method,goHome)==0){
+                                printf("Got gohome......\n");
+				leave();
+                        }
+
+
+
 
 	return 1;
 
@@ -1100,7 +1253,7 @@ char* findRFCfromID (int id) {
 
 /********************************send RFC*****************************************/
 void sendRFC(int new_fd,char *name) {
-	pthread_mutex_lock( &mutex2 );
+//	pthread_mutex_lock( &mutex2 );
 	FILE *rf;
         int rlen;
 //	char *send_data='\0';
@@ -1129,7 +1282,7 @@ void sendRFC(int new_fd,char *name) {
 //	memset(send_data,0,strlen(send_data));
 //	free(send_data);
       	close(new_fd);	
-	pthread_mutex_unlock( &mutex2 ); 
+//	pthread_mutex_unlock( &mutex2 ); 
 	
 }
 	
@@ -1157,16 +1310,18 @@ void *serverThread (void *a){
 }
 
 void fixFingers(){
-       struct Node *temp = lookup(finger[0]->keyID + 1);
+
+        pthread_mutex_lock(&tableMutex);
+
+        struct Node *temp = lookup(finger[0]->keyID + 1);
         finger[1] = temp;
         if ( finger[1]==NULL ) {
                 perror("First finger is NULL\n");
                 exit(1);
         }
-        printf("\n1111111111\n");
 
         if (debug==1) {
-                printf("join() : Actual Successor info: %s , keyID : %d",nodeToString(finger[1]),finger[1]->keyID);
+                printf("fixFingers() : Actual Successor info: %s , keyID : %d",nodeToString(finger[1]),finger[1]->keyID);
         }
         //Set of instructions that set the finger table
         //Each time a lookup is performed a check is performed to check if 
@@ -1177,7 +1332,6 @@ void fixFingers(){
         }
         else
                 finger[2] = finger[1];
-        printf("2222222\n");
         if (finger[2]->keyID < (finger[0]->keyID + 4)) {
                 printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
                 finger[3] = lookup((finger[0]->keyID + 4));
@@ -1190,8 +1344,8 @@ void fixFingers(){
         else
                 finger[4] = finger[3];*/
 
-        printf("333454333333\n");
-        return 0;
+       pthread_mutex_unlock(&tableMutex);
+       return 0;
 
 }
 
@@ -1219,4 +1373,78 @@ char *nodeToString(struct Node *n) {
         return ipPortStr;
 }
 
+int leaveResponse (struct msgToken *msgsock) {
+        int sock;
+        struct Msg* str;
+        char *m1;
+        m1=(char *)malloc(BLEN *sizeof (char));
+        str=token(msgsock->ptr);
+        sock=msgsock->sock;
+
+        printf("\nIt is in leave thread now..\n");
+
+        pthread_mutex_lock(&tableMutex);
+
+        finger[1]->keyID=str->succID;
+        strcpy(finger[1]->ipstr,str->contactIP);
+        finger[1]->port=str->contactPort;
+
+
+        pthread_mutex_unlock(&tableMutex);
+
+	printTable();
+        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+
+        char *val[15] = {"230" , itoa(finger[0]->keyID),nodeToString(finger[0]),"0.0.0.0:0" };
+        utilFramePacket(attr,val,m1);
+        printf("leaveResponse() : Packet : \n%s\n ",m1);
+        sendPkt(sock,m1);
+        close(sock);
+	free(m1);
+
+	return 0;
+}
+
+int putKeyResponse (struct msgToken *msgsock) {
+        int sock;
+        struct Msg* str;
+        char *m1;
+        m1=(char *)malloc(BLEN *sizeof (char));
+        str=token(msgsock->ptr);
+        sock=msgsock->sock;
+
+        printf("\nIt is in putKey thread now..\n");
+
+//pred is copied to tempNode since stabilization thread may change the pred before getRFCBetween completes
+	struct Node *tempNode;
+	tempNode=(struct Node *)malloc(sizeof(struct Node));
+	tempNode->keyID=pred->keyID;
+	tempNode->port=pred->port;
+	strcpy(tempNode->ipstr,pred->ipstr);
+
+
+//Get all the RFC's for which the leaving node is responsible
+
+//	getRFCBetween(str->keyID,finger[0]->keyID,tempNode);
+        
+        pthread_mutex_lock(&tableMutex);
+
+	pred->keyID=str->predID;
+        strcpy(pred->ipstr,str->contactIP);
+        pred->port=str->contactPort;
+
+        pthread_mutex_unlock(&tableMutex);
+
+	printTable();
+        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+
+        char *val[15] = {"240" , itoa(finger[0]->keyID),nodeToString(finger[0]),"0.0.0.0:0" };
+        utilFramePacket(attr,val,m1);
+        printf("putKeyResponse() : Packet : \n%s\n ",m1);
+        sendPkt(sock,m1);
+        close(sock);
+        free(m1);
+	free(tempNode);
+        return 0;
+}
 
