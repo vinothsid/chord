@@ -17,8 +17,10 @@ void *stabilizeThread() {
 //	pthread_mutex_lock( &mutex3 );
 	int stabCounter=0;
 	while(1) {
-		if ( leaveFlag ==1 )
+		if ( leaveFlag ==1 ) {
+			finalStabilizeComplete=1;
 			break;
+		}
 		sleep(2);
 		if (stabCounter ==3) {
 //			getRFCresponsible();
@@ -29,9 +31,13 @@ void *stabilizeThread() {
 
 		stabCounter++;
 		printTable();
+
+		if (leaveFlag==1) 
+			finalStabilizeComplete=1;
 //	pthread_mutex_unlock( &mutex3 );
 	}
 }
+
 int main(int argc, char *argv[])
 {
 	int i=0;

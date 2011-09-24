@@ -4,6 +4,7 @@ extern struct Node* origin;
 extern struct Node* finger[4];
 extern int totalPeers;
 extern int leaveFlag;
+extern int finalStabilizeComplete;
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t tableMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -80,11 +81,11 @@ struct Node* findSuccessorClient(int id){
 			nilCounter++;
 		}
 		else {
-			printf("not -1 for index:%d\n",i);
+			//printf("not -1 for index:%d\n",i);
 		}
 	}
 
-	printf("nilCounter : %d\n",nilCounter);
+	//printf("nilCounter : %d\n",nilCounter);
 	if ( nilCounter==3 ) {
 		return origin;
 	}
@@ -112,6 +113,10 @@ struct Node* findSuccessorClient(int id){
 
 void initFingerTable( char *ip,int port ) {
 	int i;
+
+	leaveFlag=0;
+	finalStabilizeComplete=0;
+
 	if (debug ==1 ){
 		printf("initFingerTable()\n");
 	}
@@ -133,7 +138,6 @@ void initFingerTable( char *ip,int port ) {
 	strcpy(finger[0]->ipstr,ip);
 	finger[0]->port = port;
 
-	leaveFlag=0;
 }
 
 /********************************************* JOIN **************************************************/
@@ -162,7 +166,7 @@ int join (char *ip,int port) {
 	responsePkt=recvPkt(sock);
 
 
-	printf("Response pkt: %s\n",responsePkt);
+	//printf("Response pkt: %s\n",responsePkt);
 	close(sock);	
 	m2=token(responsePkt);
 	if (debug==1) {
@@ -178,7 +182,7 @@ int join (char *ip,int port) {
 		perror("First finger is NULL\n");
 		exit(1);
 	}
-	printf("\n1111111111\n");	
+//	printf("\n1111111111\n");	
 
 	if (debug==1) {
 		printf("join() : Actual Successor info: %s , keyID : %d",nodeToString(finger[1]),finger[1]->keyID);
@@ -187,14 +191,13 @@ int join (char *ip,int port) {
 	//Each time a lookup is performed a check is performed to check if 
 	//the current finger is also the next finger
 
-/* Vinoth: Commented out since it will be done in fixFingers
 	if (finger[1]->keyID < (finger[0]->keyID + 2)) {
 		printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
 		finger[2] = lookup((finger[0]->keyID + 2));
 	}
 	else 
 		finger[2] = finger[1];
-	printf("2222222\n");
+//	printf("2222222\n");
         if (finger[2]->keyID < (finger[0]->keyID + 4)) {
 		printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
                 finger[3] = lookup((finger[0]->keyID + 4));
@@ -202,7 +205,6 @@ int join (char *ip,int port) {
         else
                 finger[3] = finger[2]; 
 
-*/
 
 //When following free statements are executed , its seg faulting
 	//free(requestPkt);
@@ -210,14 +212,14 @@ int join (char *ip,int port) {
 	//free(m1);
 	//free(m2);
 
-	printf("3333333333\n");
+//	printf("3333333333\n");
 	return 0;
 }
 
 /********************************************* LOOK UP ********************************************/
 
 struct Node * lookup(short int id) {
-printf("4444444444\n");
+	//printf("4444444444\n");
 	struct Node *n;
 	struct Node *n2;
 	struct Node *n3;
@@ -239,7 +241,7 @@ printf("4444444444\n");
 	}
 	return n;*/
 	//end of old test code
-printf("4444444444\n");
+	//printf("4444444444\n");
 	n2 = findSuccessorClient(id);
 	if (n2==NULL) {
 		perror("Find Successor Client returned NULL");
@@ -315,9 +317,9 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 	//pkt[len]=';';
 	pkt[len] = '\n';
 	pkt[len+1]='\0';
-	if (debug == 1) {
-		printf("utilFramePacket(): first line : %s\n", pkt);
-	}	
+	//if (debug == 1) {
+	//	printf("utilFramePacket(): first line : %s\n", pkt);
+	//}	
 	int i=1;
 	while(attr[i]!=NULL){
 		strcat(pkt,attr[i]);
@@ -328,17 +330,17 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
         //	pkt[len]=';';
         	pkt[len] = '\n';
 		pkt[len+1]='\0';
-		printf("The pkt until here is: %s\n", pkt);
+	//	printf("The pkt until here is: %s\n", pkt);
 		i++;
 	}
 	len = strlen(pkt);
        	pkt[len+1] = '\n';
        	pkt[len+2] = '\0';
 		
-	if (debug ==1 ){
-		printf("utilFramePacket() :Packet : \n%s%d\n", pkt,len);
+	//if (debug ==1 ){
+	//	printf("utilFramePacket() :Packet : \n%s%d\n", pkt,len);
 
-	}
+	//}
 	return 0;	
 }
 
@@ -373,11 +375,11 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 	if (payload ==NULL) {
 		char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 		char *val[15] = {method , itoa(keyID),host,contact}; 
-		printf("after val\n");	
+		//printf("after val\n");	
 		pkt = (char *)malloc(BLEN*sizeof(char));
 		utilFramePacket(attr,val,pkt);
 		if (debug == 1) {
-			printf("framePacket(): returned from utilFramePacket()\n");
+			//printf("framePacket(): returned from utilFramePacket()\n");
 		}
 	} 
 	else 
@@ -422,7 +424,7 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 	
 	}
 */ 
-        printf("framePacket() : Packet: %s\n",pkt );
+        //printf("framePacket() : Packet: %s\n",pkt );
 	return pkt;
 }
 
@@ -459,9 +461,9 @@ char *recvPkt(int sock) {
         }
 
 	recBuf[recBptr-recBuf+1] = '\0';
-	//if (debug == 1) {
-	//	printf("\nrecvPkt() : Received pkt:\n%s",recBuf);
-	//}	
+	if (debug == 1) {
+		printf("\nrecvPkt() : Received pkt:\n%s",recBuf);
+	}	
 	return recBuf;
 
 }
@@ -473,9 +475,9 @@ struct Msg* token(char *str1)
         char str[300];
 	str[0]='\0';
         strcpy(str,str1);
-	if (debug==1) {
-	        printf("\nThis is the passed value :\n%s \n",str);
-	}
+//	if (debug==1) {
+//	        printf("\nThis is the passed value :\n%s \n",str);
+//	}
         char *p ;
         rcvMsg=(struct Msg *)malloc(sizeof(struct Msg ));
         p=strtok(str," /:;'\n'");
@@ -570,7 +572,7 @@ int putKey() {
         requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
-        printf("putKey() : Packet : \n%s\n ",requestPkt);
+        printf("putKey() : Packet : \n ");
 
         sock=tcpConnect(finger[1]);
         sendPkt(sock,requestPkt);
@@ -608,12 +610,15 @@ int leave() { // making int to check if leave is successfull
 	// if the host in the msg is its succ then it updates its succ with the contact node
 	leaveFlag=1;
 
+	while( finalStabilizeComplete==0 ) {
+	// Wait till stabilize is completed fully	
+	}
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT","SUCC.ID" } ;
         char *val[15] = {"LEAVE" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[1]),itoa(finger[1]->keyID)};
         requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
-        printf("leave() : Packet : \n%s\n ",requestPkt);
+        printf("leave() : Packet : \n ");
 
         sock=tcpConnect(pred);
         sendPkt(sock,requestPkt);
@@ -672,7 +677,7 @@ void stabilize() {
 	requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
-        printf("stabilize() : Packet : \n%s\n ",requestPkt);
+        printf("stabilize()  \n ");
 
 	sock=tcpConnect(finger[1]);
         sendPkt(sock,requestPkt);
@@ -689,13 +694,13 @@ void stabilize() {
 			if(debug==1) {
 				printf("Inside liesBetween\n");
 			}
-       			pthread_mutex_lock(&tableMutex);
+///       			pthread_mutex_lock(&tableMutex);
 
 			finger[1]->keyID=m2->keyID;
 			strcpy(finger[1]->ipstr,m2->contactIP);
 			finger[1]->port=m2->contactPort;
 
-       			pthread_mutex_unlock(&tableMutex);
+//       			pthread_mutex_unlock(&tableMutex);
 			
 		}
 					
@@ -726,7 +731,7 @@ void notify() {
         requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
-        printf("notify() : Packet : \n%s\n ",requestPkt);
+        printf("notify()  \n ");
 
         sock=tcpConnect(finger[1]);
         sendPkt(sock,requestPkt);
@@ -777,7 +782,7 @@ void rcvRFC(int sockfd, char *name ){
 
 void printTable() {
 	int i =0;
-	printf("Predecesor : KeyID : %d , IP : %s , Port %d\n ",pred->keyID,pred->ipstr,pred->port);
+	printf("\nPredecesor : KeyID : %d , IP : %s , Port %d\n ",pred->keyID,pred->ipstr,pred->port);
 	for (i=0;i<4;i++){
 		printf("Finger : %d KeyID: %d IP : %s , Port %d\n",i,finger[i]->keyID,finger[i]->ipstr,finger[i]->port);
 	}
@@ -860,7 +865,7 @@ int randn() {
 void joinResponse (struct msgToken *msgsock){
 	int sock;	
 	struct Msg* str;
-	printf("printing here.......%s\n...",msgsock->ptr);
+	//printf("printing here.......%s\n...",msgsock->ptr);
 	str=token(msgsock->ptr);
 	sock=msgsock->sock;
 	
@@ -874,7 +879,7 @@ void joinResponse (struct msgToken *msgsock){
         char *val[15] = {"200" , itoa(str->keyID),nodeToString(finger[0]),"NULL:NULL"};
 	m1=(char *)malloc(BLEN*sizeof(char));
         utilFramePacket(attr,val,m1);
-	printf("joinResponse() : Packet : \n%s\n ",m1);
+	printf("joinResponse() \n ");
 	sendPkt(sock,m1);
 	close(sock);
 	totalPeers++;
@@ -901,7 +906,7 @@ void getResponse (struct msgToken *msgsock){
                 char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
                 char *val[15] = {"200" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
                 utilFramePacket(attr,val,m1);
-                printf("getResponse() : Packet : \n%s\n ",m1);
+                //printf("getResponse() : Packet : \n%s\n ",m1);
                 sendPkt(sock,m1);
 		close(sock);
                 return;
@@ -910,7 +915,7 @@ void getResponse (struct msgToken *msgsock){
                 char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
                 char *val[15] = {"200" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
                 utilFramePacket(attr,val,m1);
-                printf("getResponse() : Packet : \n%s\n ",m1);
+                //printf("getResponse() : Packet : \n%s\n ",m1);
                 sendPkt(sock,m1);
 		close(sock);
                 return;
@@ -919,7 +924,7 @@ void getResponse (struct msgToken *msgsock){
 	        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 	        char *val[15] = {"200" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
 	        utilFramePacket(attr,val,m1);
-        	printf("getResponse() : Packet : \n%s\n ",m1);
+        	//printf("getResponse() : Packet : \n%s\n ",m1);
 	        sendPkt(sock,m1);
 		close(sock);
 		return;
@@ -930,7 +935,7 @@ void getResponse (struct msgToken *msgsock){
                     char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
                 		char *val[15] = {"305" , itoa(finger[i]->keyID),nodeToString(finger[0]),nodeToString(finger[i])};
                 		utilFramePacket(attr,val,m1);
-		                printf("getResponse() : Packet : \n%s\n ",m1);
+		  //              printf("getResponse() : Packet : \n%s\n ",m1);
                 		sendPkt(sock,m1);
 				close(sock);
 				return;
@@ -941,7 +946,7 @@ void getResponse (struct msgToken *msgsock){
 	char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 	char *val[15] = {"200" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
         utilFramePacket(attr,val,m1);
-        printf("getResponse() : Packet : \n%s\n ",m1);
+        //printf("getResponse() : Packet : \n%s\n ",m1);
         sendPkt(sock,m1);
 	close(sock);
 	free(m1);
@@ -985,7 +990,7 @@ void stabResponse (struct msgToken *msgsock){
 	        char *val[15] = {"100" , itoa(pred->keyID),nodeToString(finger[0]),nodeToString(pred)};
         	utilFramePacket(attr,val,m1);
 	}
-        printf("stabResponse() : Packet : \n%s\n ",m1);
+        printf("stabResponse() \n");
         sendPkt(sock,m1);
 	close(sock);
 
@@ -1005,7 +1010,7 @@ void notifyResponse (struct msgToken *msgsock){
 
         printf("\nIt is in Notify thread now...congo...4...\n");
 
-        pthread_mutex_lock(&tableMutex);
+//        pthread_mutex_lock(&tableMutex);
 
 	if (pred->keyID==-1) {
 		pred->keyID=str->keyID;
@@ -1021,13 +1026,13 @@ void notifyResponse (struct msgToken *msgsock){
 		}
 	}
 
-        pthread_mutex_unlock(&tableMutex);
+//        pthread_mutex_unlock(&tableMutex);
 
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 
         char *val[15] = {"110" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
         utilFramePacket(attr,val,m1);
-        printf("notifyResponse() : Packet : \n%s\n ",m1);
+        printf("notifyResponse() \n ");
         sendPkt(sock,m1);
 	close(sock);
 	printTable();
@@ -1302,7 +1307,7 @@ void *serverThread (void *a){
 	msgsock =(struct msgToken*)malloc(sizeof(struct msgToken));
         msgsock->ptr=msg1;
         msgsock->sock=sockDesc;
-	printf("The message msg1 is : %s\n", msg1);
+	//printf("The message msg1 is : %s\n", msg1);
 	Action(msgsock);
 	close(sockDesc);
 	free(a);
@@ -1311,7 +1316,7 @@ void *serverThread (void *a){
 
 void fixFingers(){
 
-        pthread_mutex_lock(&tableMutex);
+//        pthread_mutex_lock(&tableMutex);
 
         struct Node *temp = lookup(finger[0]->keyID + 1);
         finger[1] = temp;
@@ -1344,7 +1349,7 @@ void fixFingers(){
         else
                 finger[4] = finger[3];*/
 
-       pthread_mutex_unlock(&tableMutex);
+//       pthread_mutex_unlock(&tableMutex);
        return 0;
 
 }
@@ -1362,14 +1367,14 @@ char *nodeToString(struct Node *n) {
         strcat(ipPortStr,":");
 
         portStr = itoa(n->port);
-        if (debug == 1) {
-                printf("nodeToString() :From itoa IP String : %s ipPortStr : %s\n",portStr,ipPortStr);
-        }
+//        if (debug == 1) {
+//                printf("nodeToString() :From itoa IP String : %s ipPortStr : %s\n",portStr,ipPortStr);
+//        }
         strcat(ipPortStr,portStr);
         free(portStr);
-        if (debug == 1) {
-                printf("nodeToString(): IP String : %s\n",ipPortStr);
-        }
+//        if (debug == 1) {
+//                printf("nodeToString(): IP String : %s\n",ipPortStr);
+//        }
         return ipPortStr;
 }
 
@@ -1383,21 +1388,21 @@ int leaveResponse (struct msgToken *msgsock) {
 
         printf("\nIt is in leave thread now..\n");
 
-        pthread_mutex_lock(&tableMutex);
+//        pthread_mutex_lock(&tableMutex);
 
         finger[1]->keyID=str->succID;
         strcpy(finger[1]->ipstr,str->contactIP);
         finger[1]->port=str->contactPort;
 
 
-        pthread_mutex_unlock(&tableMutex);
+//        pthread_mutex_unlock(&tableMutex);
 
 	printTable();
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 
         char *val[15] = {"230" , itoa(finger[0]->keyID),nodeToString(finger[0]),"0.0.0.0:0" };
         utilFramePacket(attr,val,m1);
-        printf("leaveResponse() : Packet : \n%s\n ",m1);
+        printf("leaveResponse() \n");
         sendPkt(sock,m1);
         close(sock);
 	free(m1);
@@ -1427,20 +1432,20 @@ int putKeyResponse (struct msgToken *msgsock) {
 
 //	getRFCBetween(str->keyID,finger[0]->keyID,tempNode);
         
-        pthread_mutex_lock(&tableMutex);
+//        pthread_mutex_lock(&tableMutex);
 
 	pred->keyID=str->predID;
         strcpy(pred->ipstr,str->contactIP);
         pred->port=str->contactPort;
 
-        pthread_mutex_unlock(&tableMutex);
+//        pthread_mutex_unlock(&tableMutex);
 
 	printTable();
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 
         char *val[15] = {"240" , itoa(finger[0]->keyID),nodeToString(finger[0]),"0.0.0.0:0" };
         utilFramePacket(attr,val,m1);
-        printf("putKeyResponse() : Packet : \n%s\n ",m1);
+        printf("putKeyResponse()\n");
         sendPkt(sock,m1);
         close(sock);
         free(m1);

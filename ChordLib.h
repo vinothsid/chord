@@ -25,6 +25,7 @@
 //#define log(a,b,c) if(debug) printf("%s ... %s ... %s", a, b, c);
 int leaveFlag;
 int totalPeers;
+int finalStabilizeComplete;
 struct Node {
 	int keyID;
 	char ipstr[INET6_ADDRSTRLEN];
