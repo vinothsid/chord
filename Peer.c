@@ -63,6 +63,8 @@ int main(int argc, char *argv[])
 
 	
 	pthread_join(threadServer,NULL);	
+	pthread_join(threadClient,NULL);
+	pthread_join(threadStabilize,NULL);
 }
 
 
