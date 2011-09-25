@@ -1329,16 +1329,16 @@ void fixFingers(){
 
 //        pthread_mutex_lock(&tableMutex);
 
-        struct Node *temp = lookup(finger[0]->keyID + 1);
-        finger[1] = temp;
-        if ( finger[1]==NULL ) {
-                perror("First finger is NULL\n");
-                exit(1);
-        }
+//        struct Node *temp = lookup(finger[0]->keyID + 1);
+//        finger[1] = temp;
+//        if ( finger[1]==NULL ) {
+//                perror("First finger is NULL\n");
+//                exit(1);
+ //       }
 
-        if (debug==1) {
-                printf("fixFingers() : Actual Successor info: %s , keyID : %d",nodeToString(finger[1]),finger[1]->keyID);
-        }
+  //      if (debug==1) {
+  //              printf("fixFingers() : Actual Successor info: %s , keyID : %d",nodeToString(finger[1]),finger[1]->keyID);
+  //      }
         //Set of instructions that set the finger table
         //Each time a lookup is performed a check is performed to check if 
         //the current finger is also the next finger
