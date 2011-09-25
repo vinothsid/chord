@@ -445,7 +445,8 @@ int sendPkt(int sock,char *buf) {
 /***************************************** RECEIVE PACKET ***************************************/
 
 char *recvPkt(int sock) {
-	char *recBuf = (char *)malloc(BLEN);
+	char *recBuf = (char *)calloc(BLEN,sizeof(char));
+	
         char *recBptr; //pointer to recBuf
         int n;
         int buflen;
@@ -460,7 +461,8 @@ char *recvPkt(int sock) {
         	}       */
                 recBptr +=n;
 	//	recBptr++;
-		break;
+		if (recBuf[0]!='\0' )
+			break;
 
         }
 
