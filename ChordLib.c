@@ -1443,7 +1443,7 @@ int putKeyResponse (struct msgToken *msgsock) {
 
 //Get all the RFC's for which the leaving node is responsible
 
-//	getRFCBetween(str->keyID,finger[0]->keyID,tempNode);
+	getRFCBetween(str->keyID,finger[0]->keyID,tempNode);
         
 //        pthread_mutex_lock(&tableMutex);
 
