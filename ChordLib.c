@@ -193,14 +193,14 @@ int join (char *ip,int port) {
 	//Each time a lookup is performed a check is performed to check if 
 	//the current finger is also the next finger
 
-	if (finger[1]->keyID < (finger[0]->keyID + 2) && !(liesBetween(finger[0]->keyID,finger[1]->keyID))) {
+	if (finger[1]->keyID < (finger[0]->keyID + 2) && !(liesBetween((finger[0]->keyID + 2),finger[0]->keyID,finger[1]->keyID))) {
 		printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
 		finger[2] = lookup((finger[0]->keyID + 2));
 	}
 	else 
 		finger[2] = finger[1];
 //	printf("2222222\n");
-        if (finger[2]->keyID < (finger[0]->keyID + 4) && !(liesBetween(finger[0]->keyID,finger[1]->keyID))) {
+        if (finger[2]->keyID < (finger[0]->keyID + 4) && !(liesBetween((finger[0]->keyID + 4),finger[0]->keyID,finger[1]->keyID))) {
 		printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
                 finger[3] = lookup((finger[0]->keyID + 4));
         }
@@ -1342,14 +1342,14 @@ void fixFingers(){
         //Set of instructions that set the finger table
         //Each time a lookup is performed a check is performed to check if 
         //the current finger is also the next finger
-        if (finger[1]->keyID < (finger[0]->keyID + 2)  && !(liesBetween(finger[0]->keyID,finger[1]->keyID)) ) {
+        if (finger[1]->keyID < (finger[0]->keyID + 2)  && !(liesBetween((finger[0]->keyID + 2),finger[0]->keyID,finger[1]->keyID)) ) {
                 printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
                 finger[2] = lookup((finger[0]->keyID + 2));
         }
         else
                 finger[2] = finger[1];
 
-        if (finger[2]->keyID < (finger[0]->keyID + 4)  && !(liesBetween(finger[0]->keyID,finger[1]->keyID)) ) {
+        if (finger[2]->keyID < (finger[0]->keyID + 4)  && !(liesBetween((finger[0]->keyID + 4),finger[0]->keyID,finger[1]->keyID)) ) {
                 printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
                 finger[3] = lookup((finger[0]->keyID + 4));
         }
