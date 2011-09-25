@@ -23,7 +23,7 @@ void *stabilizeThread() {
 		}
 		sleep(2);
 		if (stabCounter ==3) {
-//			getRFCresponsible();
+			getRFCresponsible();
 		}
 		stabilize();
                 fixFingers();
