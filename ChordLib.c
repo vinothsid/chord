@@ -12,7 +12,7 @@ pthread_mutex_t tableMutex = PTHREAD_MUTEX_INITIALIZER;
 int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,205,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
 
 char* RFCnames[50] = {"rfc4261","rfc3718","rfc1493","rfc3129","rfc2716","rfc4457","rfc2807","rfc1977","rfc2170","rfc1029","rfc3774","rfc1197","rfc4066","rfc4771","rfc2941","rfc1352","rfc4067","rfc5352","rfc4043","rfc3603","rfc5474","rfc5043","rfc5140","rfc3676","rfc2461","rfc3092","rfc1464","rfc1909","rfc2791","rfc2869","rfc3087","rfc4345","rfc3349","rfc3089","rfc5355","rfc5571","rfc3093","rfc2286","rfc3671","rfc3881","rfc5439","rfc1609","rfc1918","rfc4151","rfc1948","rfc4593","rfc1207","rfc4507","rfc4766","rfc4754"};
-
+int count=0;
  int debug=1;
 /**************************** TCP CONNECT ****************************************/
 int tcpConnect(struct Node* n) {
@@ -673,7 +673,7 @@ void stabilize() {
 //	}
 
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-        char *val[15] = {"STAB" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+        char *val[15] = {"STAB" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
 	requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
@@ -690,6 +690,7 @@ void stabilize() {
 		if(debug==1) {
 			printf("Inside 100 response\n");
 		}
+		
 		if ( liesBetween(m2->keyID,finger[0]->keyID,finger[1]->keyID)==1) {
 			if(debug==1) {
 				printf("Inside liesBetween\n");
@@ -984,7 +985,14 @@ void stabResponse (struct msgToken *msgsock){
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 
 	if (pred->keyID==-1) {
-        	char *val[15] = {"100" , itoa(pred->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
+		if(finger[0]->keyID==0 && count==0){
+		count++;
+		finger[1]->keyID=str->keyID;
+	                strcpy(finger[1]->ipstr,str->contactIP);
+        	        finger[1]->port=str->contactPort;
+
+		}
+        	char *val[15] = {"100" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};//
         	utilFramePacket(attr,val,m1);
 	} else {
 	        char *val[15] = {"100" , itoa(pred->keyID),nodeToString(finger[0]),nodeToString(pred)};

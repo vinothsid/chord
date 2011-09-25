@@ -16,9 +16,8 @@ void *PeerClient(void *newNode) {
 void *stabilizeThread() {
         while(1) {
 	if( totalPeers>0 ) {
-        	sleep(8);
+        	sleep(2);
                 stabilize();
-		sleep(2);
 		fixFingers();
                 printTable();
 	}
