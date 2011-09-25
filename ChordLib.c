@@ -62,6 +62,8 @@ struct Msg* initMsg(){
 
 
 struct Node* findSuccessorClient(int id){
+
+	id=id%1024;
 /*	struct Node *n=(struct Node*)malloc(sizeof(struct Node));
         n->keyID = 1035;
         strcpy(n->ipstr,"127.0.0.1");
@@ -176,7 +178,7 @@ int join (char *ip,int port) {
 	finger[0]->sblNo = 0; //m2->sblNoMsg;
 	//Next instruction sets the successor of the current node
 
-	struct Node *temp = lookup(finger[0]->keyID + 1);
+	struct Node *temp = lookup((finger[0]->keyID + 1));
 	finger[1] = temp; 
 	if ( finger[1]==NULL ) {
 		perror("First finger is NULL\n");
@@ -191,14 +193,14 @@ int join (char *ip,int port) {
 	//Each time a lookup is performed a check is performed to check if 
 	//the current finger is also the next finger
 
-	if (finger[1]->keyID < (finger[0]->keyID + 2)) {
+	if (finger[1]->keyID < (finger[0]->keyID + 2) && !(liesBetween(finger[0]->keyID,finger[1]->keyID))) {
 		printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
 		finger[2] = lookup((finger[0]->keyID + 2));
 	}
 	else 
 		finger[2] = finger[1];
 //	printf("2222222\n");
-        if (finger[2]->keyID < (finger[0]->keyID + 4)) {
+        if (finger[2]->keyID < (finger[0]->keyID + 4) && !(liesBetween(finger[0]->keyID,finger[1]->keyID))) {
 		printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
                 finger[3] = lookup((finger[0]->keyID + 4));
         }
@@ -219,6 +221,8 @@ int join (char *ip,int port) {
 /********************************************* LOOK UP ********************************************/
 
 struct Node * lookup(short int id) {
+
+	id=id%1024;
 	//printf("4444444444\n");
 	struct Node *n;
 	struct Node *n2;
@@ -764,15 +768,14 @@ void rcvRFC(int sockfd, char *name ){
 
         printf("Received : \n");
         while ((n=recv(sockfd,recBuf,buflen,0))>0) {
-		recBuf[n+1]='\0';
+		recBuf[n]='\0';
      		fputs(recBuf,wf);
 
         //	printf("%s",recBuf);
-        	if (n==300)
                 	memset(recBuf,0,300);
 	//	fflush(recBuf);
-		if (n<300)
-			close(sockfd);
+//		if (n<300)
+//			close(sockfd);
         }	
         fclose(wf);
         printf("Fclse done\n");
@@ -1339,18 +1342,20 @@ void fixFingers(){
         //Set of instructions that set the finger table
         //Each time a lookup is performed a check is performed to check if 
         //the current finger is also the next finger
-        if (finger[1]->keyID < (finger[0]->keyID + 2)) {
+        if (finger[1]->keyID < (finger[0]->keyID + 2)  && !(liesBetween(finger[0]->keyID,finger[1]->keyID)) ) {
                 printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
                 finger[2] = lookup((finger[0]->keyID + 2));
         }
         else
                 finger[2] = finger[1];
-        if (finger[2]->keyID < (finger[0]->keyID + 4)) {
+
+        if (finger[2]->keyID < (finger[0]->keyID + 4)  && !(liesBetween(finger[0]->keyID,finger[1]->keyID)) ) {
                 printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
                 finger[3] = lookup((finger[0]->keyID + 4));
         }
         else
                 finger[3] = finger[2];
+
        /* if (finger[3]->keyID < (finger[0]->keyID + 8)) {
                 finger[4] = lookup((finger[0]->keyID + 8));
         }
