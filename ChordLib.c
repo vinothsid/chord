@@ -1,14 +1,16 @@
 #include "ChordLib.h"
 #include <pthread.h>
 extern struct Node* origin;
-extern struct Node* finger[4];
+extern struct Node* finger[5];
 extern int totalPeers;
 extern int leaveFlag;
 extern int finalStabilizeComplete;
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t tableMutex = PTHREAD_MUTEX_INITIALIZER;
-//int tempCount = 0;
+
+int tempCount = -1;
+int tempIDspace[10] = {1,2,3,4,5,150,300,1022};
 
 int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,205,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
 
@@ -64,6 +66,9 @@ struct Msg* initMsg(){
 
 struct Node* findSuccessorClient(int id){
 
+//	printf("To check special case\n");
+//	return finger[1];
+
 	id=id%1024;
 /*	struct Node *n=(struct Node*)malloc(sizeof(struct Node));
         n->keyID = 1035;
@@ -94,15 +99,17 @@ struct Node* findSuccessorClient(int id){
 		return origin;
 	}
 
+
 	if (liesBetween(id, finger[0]->keyID , finger[1]->keyID)){
 		return finger[1];
 	} else {
+
 		for (i=3; i>=1; i--) {
 //If finger[i]->keyID is -1 ,continue the loop without returning . Finally the highest finger with proper value is returned in the if clause.(return finger[i])
 			if (finger[i]->keyID==-1) {
 				continue;
 			}
-			if (finger[i]->keyID < id ) {
+			if (liesBetween(id,finger[i]->keyID,finger[i+1]->keyID )) {
 //				finger[i]->port=5000;
 //				strcpy(finger[i]->ipstr,"127.0.0.1");
 				return finger[i];
@@ -137,6 +144,8 @@ void initFingerTable( char *ip,int port ) {
 		finger[i]->keyID=-1;
 	}
 
+//finger[4] should not be used .It is not part of finger table.Its only place holder for peer zero.
+	finger[4]=origin;
 //Initialise the self values
 	strcpy(finger[0]->ipstr,ip);
 	finger[0]->port = port;
@@ -195,14 +204,14 @@ int join (char *ip,int port) {
 	//the current finger is also the next finger
 
 
-	if (finger[1]->keyID < (finger[0]->keyID + 2) && !(liesBetween((finger[0]->keyID + 2),finger[0]->keyID,finger[1]->keyID))) {
+	if (finger[1]->keyID < ((finger[0]->keyID + 2)) % 1024 && !(liesBetween((finger[0]->keyID + 2),finger[0]->keyID,finger[1]->keyID))) {
 		printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
 		finger[2] = lookup((finger[0]->keyID + 2));
 	}
 	else 
 		finger[2] = finger[1];
 //	printf("2222222\n");
-        if (finger[2]->keyID < (finger[0]->keyID + 4) && !(liesBetween((finger[0]->keyID + 4),finger[0]->keyID,finger[1]->keyID))) {
+        if (finger[2]->keyID < ((finger[0]->keyID + 4))%1024 && !(liesBetween((finger[0]->keyID + 4),finger[0]->keyID,finger[1]->keyID))) {
 		printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
                 finger[3] = lookup((finger[0]->keyID + 4));
         }
@@ -554,6 +563,10 @@ when the next nodes rcv that msg....it will check leaveStbNo. , if it is >=2 the
 =======
 this will prevent looping and infinite message sending loops. PlEASE COMMENT ANY SUGGESTIONS, I WILL WRITE A TEMP CODE FOR THIS ***********************/
 int liesBetween(id,start,end) {
+
+	if (start==end)
+		return 0;  
+	id=id%1024;
 	if (start<end) {
 		if( id > start && id <=end){
 			return 1;
@@ -875,9 +888,11 @@ int randn() {
 	printf("\nthe number generated(%d)\n",num);
 
 	return num;
+
+//For testing purpose uncomment following lines . tempIDspace and tempCount are already defined globally
+
 //	tempCount++;
-//	return tempCount;
-//	return 1023;
+//	return tempIDspace[tempCount];
 }
 
 /***************RESPONSES WRITTEN HERE**********************************/
@@ -939,7 +954,7 @@ void getResponse (struct msgToken *msgsock){
                 sendPkt(sock,m1);
 		close(sock);
                 return;
-	} else if (finger[0]->keyID < str->keyID &&  str->keyID <= finger[1]->keyID){
+	} else if (liesBetween(str->keyID,finger[0]->keyID,finger[1]->keyID) ) {
 //Found the actual successor . 
 	        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 	        char *val[15] = {"200" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
@@ -949,6 +964,8 @@ void getResponse (struct msgToken *msgsock){
 		close(sock);
 		return;
         } else {
+
+/*major change
              for (i=3; i>1; i--) {
                         if (finger[i]->keyID < str->keyID ) {
 //Send shortcut contact node to the client.
@@ -961,6 +978,40 @@ void getResponse (struct msgToken *msgsock){
 				return;
                         }
                 }
+
+*/
+		if ( liesBetween(str->keyID,finger[3]->keyID,0)) {
+		        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+                	char *val[15] = {"305" , itoa(finger[3]->keyID),nodeToString(finger[0]),nodeToString(finger[3])};
+                        utilFramePacket(attr,val,m1);
+                  //              printf("getResponse() : Packet : \n%s\n ",m1);
+                        sendPkt(sock,m1);
+                        close(sock);
+                        return;
+                }
+
+                if ( liesBetween(str->keyID,finger[2]->keyID,finger[3]->keyID)) {
+                        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+                        char *val[15] = {"305" , itoa(finger[2]->keyID),nodeToString(finger[0]),nodeToString(finger[2])};
+                        utilFramePacket(attr,val,m1);
+                  //              printf("getResponse() : Packet : \n%s\n ",m1);
+                        sendPkt(sock,m1);
+                        close(sock);
+                        return;
+                }
+
+
+                if ( liesBetween(str->keyID,finger[1]->keyID,finger[2]->keyID)) {
+                        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+                        char *val[15] = {"305" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+                        utilFramePacket(attr,val,m1);
+                  //              printf("getResponse() : Packet : \n%s\n ",m1);
+                        sendPkt(sock,m1);
+                        close(sock);
+                        return;
+                }
+
+
 	}
 
 	char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
@@ -1011,7 +1062,7 @@ void stabResponse (struct msgToken *msgsock){
         	        finger[1]->port=str->contactPort;
 
 		}
-        	char *val[15] = {"100" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};//
+        	char *val[15] = {"100" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};//
         	utilFramePacket(attr,val,m1);
 	} else {
 		if (!leaveFlag ) {
@@ -1363,14 +1414,14 @@ void fixFingers(){
         //Set of instructions that set the finger table
         //Each time a lookup is performed a check is performed to check if 
         //the current finger is also the next finger
-        if (finger[1]->keyID < (finger[0]->keyID + 2)  && !(liesBetween((finger[0]->keyID + 2),finger[0]->keyID,finger[1]->keyID)) ) {
+        if (finger[1]->keyID < ((finger[0]->keyID + 2))%1024  && !(liesBetween((finger[0]->keyID + 2),finger[0]->keyID,finger[1]->keyID)) ) {
                 printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
                 finger[2] = lookup((finger[0]->keyID + 2));
         }
         else
                 finger[2] = finger[1];
 
-        if (finger[2]->keyID < (finger[0]->keyID + 4)  && !(liesBetween((finger[0]->keyID + 4),finger[0]->keyID,finger[1]->keyID)) ) {
+        if (finger[2]->keyID < ((finger[0]->keyID + 4))%1024  && !(liesBetween((finger[0]->keyID + 4),finger[0]->keyID,finger[1]->keyID)) ) {
                 printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
                 finger[3] = lookup((finger[0]->keyID + 4));
         }

@@ -35,7 +35,7 @@ struct Node {
 	struct Node* next;
 	int sblNo;
 	
-} *finger[4], *pred, *origin;
+} *finger[5], *pred, *origin;
 
 struct msgToken {
         char *ptr;
