@@ -463,7 +463,9 @@ char *recvPkt(int sock) {
         	}       */
                 recBptr +=n;
 	//	recBptr++;
-		if (recBuf[0]!='\0' )
+
+//In case we get erroneous packet of small size
+		if (recBuf[10]!='\0' )
 			break;
 
         }
@@ -591,7 +593,7 @@ int putKey() {
 
         m1 = token(responsePkt);
 
-        if (strcmp(m1->method,"240") ) {
+        if (strcmp(m1->method,"240")==0 ) {
 		free(requestPkt);
 		free(m1);	
 		free(responsePkt);
@@ -686,7 +688,7 @@ void stabilize() {
 	requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
-        printf("stabilize()  \n ");
+        printf("stabilize(): sending pkt to %d  \n ",finger[1]->keyID);
 
 	sock=tcpConnect(finger[1]);
         sendPkt(sock,requestPkt);
@@ -997,8 +999,8 @@ void stabResponse (struct msgToken *msgsock){
 
 	if (pred->keyID==-1) {
 		if(finger[0]->keyID==0 && count==0){
-		count++;
-		finger[1]->keyID=str->keyID;
+			count++;
+			finger[1]->keyID=str->keyID;
 	                strcpy(finger[1]->ipstr,str->contactIP);
         	        finger[1]->port=str->contactPort;
 

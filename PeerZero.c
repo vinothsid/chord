@@ -15,7 +15,7 @@ void *PeerClient(void *newNode) {
 
 void *stabilizeThread() {
         while(1) {
-	if( totalPeers>0 ) {
+	if( totalPeers>0 && finger[1]->keyID!=0 ) {
         	sleep(2);
                 stabilize();
 		fixFingers();
