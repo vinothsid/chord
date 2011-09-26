@@ -8,6 +8,7 @@ extern int finalStabilizeComplete;
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t tableMutex = PTHREAD_MUTEX_INITIALIZER;
+//int tempCount = 0;
 
 int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,205,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
 
@@ -88,11 +89,11 @@ struct Node* findSuccessorClient(int id){
 	}
 
 	//printf("nilCounter : %d\n",nilCounter);
+//The below statements execute only when all finger's keyID are not -1	
 	if ( nilCounter==3 ) {
 		return origin;
 	}
 
-//The below statements execute only when all finger's keyID are not -1	
 	if (liesBetween(id, finger[0]->keyID , finger[1]->keyID)){
 		return finger[1];
 	} else {
@@ -192,6 +193,7 @@ int join (char *ip,int port) {
 	//Set of instructions that set the finger table
 	//Each time a lookup is performed a check is performed to check if 
 	//the current finger is also the next finger
+
 
 	if (finger[1]->keyID < (finger[0]->keyID + 2) && !(liesBetween((finger[0]->keyID + 2),finger[0]->keyID,finger[1]->keyID))) {
 		printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
@@ -871,7 +873,11 @@ int randn() {
 	srand(time(NULL));
 	num = rand()%1024;
 	printf("\nthe number generated(%d)\n",num);
+
 	return num;
+//	tempCount++;
+//	return tempCount;
+//	return 1023;
 }
 
 /***************RESPONSES WRITTEN HERE**********************************/
@@ -1008,8 +1014,13 @@ void stabResponse (struct msgToken *msgsock){
         	char *val[15] = {"100" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};//
         	utilFramePacket(attr,val,m1);
 	} else {
-	        char *val[15] = {"100" , itoa(pred->keyID),nodeToString(finger[0]),nodeToString(pred)};
-        	utilFramePacket(attr,val,m1);
+		if (!leaveFlag ) {
+		        char *val[15] = {"100" , itoa(pred->keyID),nodeToString(finger[0]),nodeToString(pred)};
+	        	utilFramePacket(attr,val,m1);
+		} else {
+                        char *val[15] = {"100" , itoa(pred->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+                        utilFramePacket(attr,val,m1);
+		}
 	}
         printf("stabResponse() \n");
         sendPkt(sock,m1);
