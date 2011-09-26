@@ -437,8 +437,10 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 int sendPkt(int sock,char *buf) {
 	/* send request */
 	if (debug == 1) {
+		printTime();	
 		printf("sendPkt() : Sending pkt:\n%s\n",buf);
-	}	
+	}
+
 	return send(sock, buf, strlen(buf) ,0);
 }
 
@@ -468,6 +470,7 @@ char *recvPkt(int sock) {
 
 	recBuf[recBptr-recBuf+1] = '\0';
 	if (debug == 1) {
+		printTime();
 		printf("\nrecvPkt() : Received pkt:\n%s",recBuf);
 	}	
 	return recBuf;
@@ -809,6 +812,9 @@ int getRFCresponsible() {
 
 int getRFCBetween(int start,int end,struct Node *n ) {
         int i=0;
+	if ( debug==1) {
+		printf("Getting RFC between %d and %d from node %d\n",start,end,n->keyID);
+	}
         for(i=0;i<50;i++) {
                 if (liesBetween(IDspace[i],start,end))
                 {
@@ -844,7 +850,7 @@ int getRFCrequest(int id, struct Node* rfcOwner) {
 	rfcDest=findRFCfromID(id);
 	//requestPkt="hello\n";
         sendPkt(sock,requestPkt);
-	printf("getRFCrequest(): A file of name %s will be created\n", rfcDest);
+	printf("getRFCrequest(): Receiving file %s corresponding to id %d from node %d \n", rfcDest,id,rfcOwner->keyID);
 	rcvRFC(sock, rfcDest);
         close(sock);
 	free(requestPkt);
@@ -1433,20 +1439,16 @@ int putKeyResponse (struct msgToken *msgsock) {
         str=token(msgsock->ptr);
         sock=msgsock->sock;
 
-        printf("\nIt is in putKey thread now..\n");
+        printf("\nIt is in putKeyResponse thread now..\n");
 
-//pred is copied to tempNode since stabilization thread may change the pred before getRFCBetween completes
+//Host ip and host port are used to create to tempNode since stabilization thread may change the pred before getRFCBetween completes
 	struct Node *tempNode;
 	tempNode=(struct Node *)malloc(sizeof(struct Node));
-	tempNode->keyID=pred->keyID;
-	tempNode->port=pred->port;
-	strcpy(tempNode->ipstr,pred->ipstr);
+	tempNode->keyID=str->keyID;
+	tempNode->port=str->hostPort;
+	strcpy(tempNode->ipstr,str->hostIP);
 
 
-//Get all the RFC's for which the leaving node is responsible
-
-	getRFCBetween(str->keyID,finger[0]->keyID,tempNode);
-        
 //        pthread_mutex_lock(&tableMutex);
 
 	pred->keyID=str->predID;
@@ -1454,6 +1456,11 @@ int putKeyResponse (struct msgToken *msgsock) {
         pred->port=str->contactPort;
 
 //        pthread_mutex_unlock(&tableMutex);
+
+//Get all the RFC's for which the leaving node is responsible
+
+	getRFCBetween(str->predID,str->keyID,tempNode);
+        
 
 	printTable();
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
@@ -1468,3 +1475,20 @@ int putKeyResponse (struct msgToken *msgsock) {
         return 0;
 }
 
+int printTime() {
+	char buffer[30];
+	struct timeval tv;
+
+	time_t curtime;
+
+
+
+	gettimeofday(&tv, NULL);
+	curtime=tv.tv_sec;
+
+	strftime(buffer,30,"%m-%d-%Y  %T.",localtime(&curtime));
+	printf("%s%ld\n",buffer,tv.tv_usec);
+
+	return 0;
+
+}
