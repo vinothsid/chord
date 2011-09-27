@@ -12,7 +12,7 @@ pthread_mutex_t tableMutex = PTHREAD_MUTEX_INITIALIZER;
 int tempCount = -1;
 int tempIDspace[10] = {1,2,3,4,5,150,300,1022};
 
-int IDspace[50] = {165,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,205,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
+int IDspace[50] = {1023,646,469,57,668,361,759,953,122,5,702,173,994,675,893,328,995,232,971,531,354,947,205,604,413,20,440,885,743,821,15,249,277,17,235,451,21,238,599,809,319,585,894,55,924,497,183,411,670,658};
 
 char* RFCnames[50] = {"rfc4261","rfc3718","rfc1493","rfc3129","rfc2716","rfc4457","rfc2807","rfc1977","rfc2170","rfc1029","rfc3774","rfc1197","rfc4066","rfc4771","rfc2941","rfc1352","rfc4067","rfc5352","rfc4043","rfc3603","rfc5474","rfc5043","rfc5140","rfc3676","rfc2461","rfc3092","rfc1464","rfc1909","rfc2791","rfc2869","rfc3087","rfc4345","rfc3349","rfc3089","rfc5355","rfc5571","rfc3093","rfc2286","rfc3671","rfc3881","rfc5439","rfc1609","rfc1918","rfc4151","rfc1948","rfc4593","rfc1207","rfc4507","rfc4766","rfc4754"};
 int count=0;
@@ -83,9 +83,15 @@ struct Node* findSuccessorClient(int id){
 	int i =0;
 	int nilCounter=0;
 //If all fingers are nil , then return origin
+	
+//When all other peers are left and only peer zero is left the following condition applies
+
+//	if(finger[0]->keyID==0 && finger[1]->keyID==0 ) {
+//		return origin;
+//	}
 
 	for ( i=1;i<4;i++ ) {
-		if (finger[i]->keyID==-1) {
+		if (finger[i]->keyID==-1   ) {
 			nilCounter++;
 		}
 		else {
@@ -156,7 +162,7 @@ void initFingerTable( char *ip,int port ) {
 
 int join (char *ip,int port) {
 	//struct Node n;
-	struct Msg *m1, *m2;
+	struct Msg  *m2;
 	int sock;
 	char  *requestPkt;
 	char  *responsePkt;
@@ -165,7 +171,7 @@ int join (char *ip,int port) {
 		printf("join()\n");
 	}	
 	pred->keyID=-1;
-	requestPkt= framePacket("JOIN",-1,finger[0],origin,NULL,&m1);
+	requestPkt= framePacket("JOIN",-1,finger[0],origin);
 	
 	sock = tcpConnect(origin);
 	printf("Socket num : %d\n",sock);
@@ -189,7 +195,9 @@ int join (char *ip,int port) {
 	//Next instruction sets the successor of the current node
 
 	struct Node *temp = lookup((finger[0]->keyID + 1));
-	finger[1] = temp; 
+	finger[1]->keyID = temp->keyID;
+	finger[1]->port = temp->port;
+	strcpy(finger[1]->ipstr,temp->ipstr); 
 	if ( finger[1]==NULL ) {
 		perror("First finger is NULL\n");
 		exit(1);
@@ -206,25 +214,33 @@ int join (char *ip,int port) {
 
 	if (finger[1]->keyID < ((finger[0]->keyID + 2)) % 1024 && !(liesBetween((finger[0]->keyID + 2),finger[0]->keyID,finger[1]->keyID))) {
 		printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
-		finger[2] = lookup((finger[0]->keyID + 2));
+		temp = lookup((finger[0]->keyID + 2));
+	        finger[2]->keyID = temp->keyID;
+        	finger[2]->port = temp->port;
+        	strcpy(finger[2]->ipstr,temp->ipstr);
+
 	}
 	else 
 		finger[2] = finger[1];
 //	printf("2222222\n");
         if (finger[2]->keyID < ((finger[0]->keyID + 4))%1024 && !(liesBetween((finger[0]->keyID + 4),finger[0]->keyID,finger[1]->keyID))) {
 		printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
-                finger[3] = lookup((finger[0]->keyID + 4));
+                temp = lookup((finger[0]->keyID + 4));
+
+	        finger[3]->keyID = temp->keyID;
+        	finger[3]->port = temp->port;
+	        strcpy(finger[3]->ipstr,temp->ipstr);
+
         }
         else
                 finger[3] = finger[2]; 
 
 
 //When following free statements are executed , its seg faulting
-	//free(requestPkt);
-	//free(responsePkt);
-	//free(m1);
-	//free(m2);
-
+	free(requestPkt);
+	free(responsePkt);
+	free(m2);
+	free(temp);
 //	printf("3333333333\n");
 	return 0;
 }
@@ -240,7 +256,7 @@ struct Node * lookup(short int id) {
 	struct Node *n3;
 	n=(struct Node *)malloc(sizeof(struct Node));
 	n3=(struct Node *)malloc(sizeof(struct Node));
-	struct Msg *m1, *m2;
+	struct Msg  *m2;
 	int sock;
 	//int sock1;
 	char respCode[15];
@@ -267,7 +283,7 @@ struct Node * lookup(short int id) {
 		printf("lookup(): value returned from findSuccessorClient keyID: %d ip:%s port: %d\n",n2->keyID,n2->ipstr,n2->port);
 	}
 	
-	requestPkt=framePacket("GET",id, finger[0], n2, NULL, &m1);		
+	requestPkt=framePacket("GET",id, finger[0], n2);		
 //sleep(2);
 	sock = tcpConnect(n2);
 	sendPkt(sock, requestPkt);
@@ -281,7 +297,7 @@ struct Node * lookup(short int id) {
 	while (strcmp(m2->method,"305")==0) {
 		strcpy(n3->ipstr, m2->contactIP);
 		n3->port = m2->contactPort;
-		requestPkt = framePacket("GET", id, finger[0], n3,NULL, &m1);
+		requestPkt = framePacket("GET", id, finger[0], n3);
 		sock = tcpConnect(n3);
 		sendPkt(sock, requestPkt);
 		responsePkt=recvPkt(sock);
@@ -303,10 +319,11 @@ struct Node * lookup(short int id) {
 		}
 
 //When following free statements are executed seg fault occuring
-	//	free(requestPkt);
-	//	free(responsePkt);
-	//	free(m1);
-	//	free(m2);
+		free(requestPkt);
+		free(responsePkt);
+		free(m2);
+		free(n2);
+		free(n3);
 		return n;
 
 	}
@@ -316,6 +333,7 @@ struct Node * lookup(short int id) {
 //	free(responsePkt);
 //	free(m1);
 //	free(m2);
+	printf("lookup failed and returning NULL\n");
 	return NULL;
 }
 
@@ -361,7 +379,7 @@ int utilFramePacket(char** attr, char** val,char *pkt) {
 
 /************************************ Frame Packet *********************************************/
 
-char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct Node* contactNode, struct metaFile* payload, struct Msg** m) {
+char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct Node* contactNode ) {
 	char *pkt;
 	char host[INET6_ADDRSTRLEN + 10];
 	char contact[INET6_ADDRSTRLEN + 10];
@@ -387,7 +405,6 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 	if (debug == 1 ) {
 		printf("framePacket() : Host : %s\n ",host);
 	}
-	if (payload ==NULL) {
 		char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 		char *val[15] = {method , itoa(keyID),host,contact}; 
 		//printf("after val\n");	
@@ -396,9 +413,6 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 		if (debug == 1) {
 			//printf("framePacket(): returned from utilFramePacket()\n");
 		}
-	} 
-	else 
-		pkt = (char *)malloc(BLEN + payload->contentLength );
 		
 	
 	
@@ -651,7 +665,6 @@ int leave() { // making int to check if leave is successfull
 
         responsePkt=recvPkt(sock);
         close(sock);
-	free(requestPkt);
 
         m1 = token(responsePkt);
 
@@ -661,6 +674,7 @@ int leave() { // making int to check if leave is successfull
 		printf("Warning: Ack for Leave is not received\n");
 	}
 
+	free(requestPkt);
 	free(responsePkt);
 	free(m1);
 	return putKey();
@@ -773,6 +787,7 @@ void notify() {
 	free(requestPkt);
 	free(responsePkt);
 	free(m2);
+	return;
 }
 
 /****************************************rcv RFC******************************/
@@ -781,7 +796,7 @@ void rcvRFC(int sockfd, char *name ){
         wf=fopen(name,"wa");
         
 	//Receive loop          
-        char *recBuf = (char *)malloc(300);
+        char *recBuf = (char *)malloc(301);
         char *recBptr; //pointer to recBuf
         int n;
         int buflen;
@@ -804,6 +819,7 @@ void rcvRFC(int sockfd, char *name ){
 	close(sockfd); 
 
 	free(recBuf);
+	return;
 }
 
 void printTable() {
@@ -818,6 +834,7 @@ int triggerSingleRFC(int id) {
 	struct Node* rfcOwner;
 	rfcOwner=lookup(id);
 	getRFCrequest(id, rfcOwner);
+	free(rfcOwner);
 	return 1;
 
 }
@@ -920,6 +937,8 @@ void joinResponse (struct msgToken *msgsock){
 	totalPeers++;
 	printf("joinResponse(): totalPeers : %d\n",totalPeers);
 	free(m1);
+	free(str);
+	return;
 }
 
 struct Node *findSuccessorServer(int id) {
@@ -944,6 +963,8 @@ void getResponse (struct msgToken *msgsock){
                 //printf("getResponse() : Packet : \n%s\n ",m1);
                 sendPkt(sock,m1);
 		close(sock);
+		free(m1);
+		free(str);
                 return;
 	} else if (finger[1]->keyID ==0 && str->keyID > finger[0]->keyID  ) {
 //The node lies between last peer and peer 0
@@ -953,6 +974,8 @@ void getResponse (struct msgToken *msgsock){
                 //printf("getResponse() : Packet : \n%s\n ",m1);
                 sendPkt(sock,m1);
 		close(sock);
+		free(m1);
+		free(str);
                 return;
 	} else if (liesBetween(str->keyID,finger[0]->keyID,finger[1]->keyID) ) {
 //Found the actual successor . 
@@ -962,6 +985,8 @@ void getResponse (struct msgToken *msgsock){
         	//printf("getResponse() : Packet : \n%s\n ",m1);
 	        sendPkt(sock,m1);
 		close(sock);
+		free(m1);
+		free(str);
 		return;
         } else {
 
@@ -987,6 +1012,8 @@ void getResponse (struct msgToken *msgsock){
                   //              printf("getResponse() : Packet : \n%s\n ",m1);
                         sendPkt(sock,m1);
                         close(sock);
+			free(m1);
+			free(str);
                         return;
                 }
 
@@ -997,6 +1024,8 @@ void getResponse (struct msgToken *msgsock){
                   //              printf("getResponse() : Packet : \n%s\n ",m1);
                         sendPkt(sock,m1);
                         close(sock);
+			free(m1);
+			free(str);
                         return;
                 }
 
@@ -1008,6 +1037,8 @@ void getResponse (struct msgToken *msgsock){
                   //              printf("getResponse() : Packet : \n%s\n ",m1);
                         sendPkt(sock,m1);
                         close(sock);
+			free(m1);
+			free(str);
                         return;
                 }
 
@@ -1225,7 +1256,7 @@ int Action(struct msgToken* msgsock){
 
 
 
-
+	free(gotMsg);
 	return 1;
 
 }
@@ -1394,11 +1425,14 @@ void *serverThread (void *a){
 	Action(msgsock);
 	close(sockDesc);
 	free(a);
+	return;
 			
 }
 
 void fixFingers(){
 
+	struct Node *temp=NULL;
+	  
 //        pthread_mutex_lock(&tableMutex);
 
 //        struct Node *temp = lookup(finger[0]->keyID + 1);
@@ -1415,15 +1449,21 @@ void fixFingers(){
         //Each time a lookup is performed a check is performed to check if 
         //the current finger is also the next finger
         if (finger[1]->keyID < ((finger[0]->keyID + 2))%1024  && !(liesBetween((finger[0]->keyID + 2),finger[0]->keyID,finger[1]->keyID)) ) {
+          	temp=lookup((finger[0]->keyID + 2));
                 printf("lookup(finger[2]): finger[1].keyID : finger[0]->keyID +2: %d %d \n", finger[1]->keyID, finger[0]->keyID + 2);
-                finger[2] = lookup((finger[0]->keyID + 2));
+	        finger[2]->keyID = temp->keyID;
+	        finger[2]->port = temp->port;
+        	strcpy(finger[2]->ipstr,temp->ipstr);
         }
         else
                 finger[2] = finger[1];
 
         if (finger[2]->keyID < ((finger[0]->keyID + 4))%1024  && !(liesBetween((finger[0]->keyID + 4),finger[0]->keyID,finger[1]->keyID)) ) {
                 printf("lookup(finger[3]): finger[2].keyID : finger[0]->keyID +4: %d %d \n", finger[1]->keyID, finger[0]->keyID + 4);
-                finger[3] = lookup((finger[0]->keyID + 4));
+                temp = lookup((finger[0]->keyID + 4));
+	        finger[3]->keyID = temp->keyID;
+        	finger[3]->port = temp->port;
+	        strcpy(finger[3]->ipstr,temp->ipstr);
         }
         else
                 finger[3] = finger[2];
@@ -1435,6 +1475,10 @@ void fixFingers(){
                 finger[4] = finger[3];*/
 
 //       pthread_mutex_unlock(&tableMutex);
+
+	if ( temp!=NULL) {
+		free(temp);
+	}
        return 0;
 
 }
@@ -1490,7 +1534,9 @@ int leaveResponse (struct msgToken *msgsock) {
         printf("leaveResponse() \n");
         sendPkt(sock,m1);
         close(sock);
+
 	free(m1);
+	free(str);
 
 	return 0;
 }
@@ -1521,9 +1567,6 @@ int putKeyResponse (struct msgToken *msgsock) {
 
 //        pthread_mutex_unlock(&tableMutex);
 
-//Get all the RFC's for which the leaving node is responsible
-
-	getRFCBetween(str->predID,str->keyID,tempNode);
         
 
 	printTable();
@@ -1534,7 +1577,11 @@ int putKeyResponse (struct msgToken *msgsock) {
         printf("putKeyResponse()\n");
         sendPkt(sock,m1);
         close(sock);
+//Get all the RFC's for which the leaving node is responsible
+
+	getRFCBetween(str->predID,str->keyID,tempNode);
         free(m1);
+        free(str);
 	free(tempNode);
         return 0;
 }

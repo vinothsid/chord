@@ -19,9 +19,9 @@
 #define VERSION "1.0"
 #define BLEN 300
 #define LISTENQUEUE 10
-#define PEER_ZERO_IP "192.168.15.4"
+#define PEER_ZERO_IP "127.0.0.1"
 #define PEER_ZERO_PORT 5000
-#define RFC_PATH "/home/vino/rfcDir/"
+#define RFC_PATH "/home/apoorva/rfc-DB/"
 //int debug=1;
 //#define log(funcName,str,variable) if (debug ==1) { printf("
 //#define log(a,b,c) if(debug) printf("%s ... %s ... %s", a, b, c);
@@ -78,7 +78,7 @@ struct Msg* initMsg(); //Allocates space for struct Msg ,initialises it and retu
 
 int utilFramePacket(char** attr, char** val,char *pkt); //Takes attribute value pairs to form packet 
 
-char* framePacket(char* method, short int keyID, struct  Node* hostNode,struct Node* contactNode, struct metaFile* payload, struct Msg** m) ; //Returns a char * which is the packet to be sent.
+char* framePacket(char* method, short int keyID, struct  Node* hostNode,struct Node* contactNode) ; //Returns a char * which is the packet to be sent.
 
 struct Node * lookup(short int id); // Looks for the node responsible for the specific by executing chord algorithm for lookup .
 
