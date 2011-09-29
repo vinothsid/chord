@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	selfNode = (struct Node *)malloc(sizeof(struct Node));
 	strcpy(selfNode->ipstr,argv[1]);
 	selfNode->port = atoi(argv[2]);
-	printf("Peer with server address : %s joining\n",nodeToString(selfNode));
+	printf("Peer with server address : %s:%s joining\n",argv[1],argv[2]);
 	printf ("\n CHORD LIGHT IS NOW LISTENING ");
 
 
