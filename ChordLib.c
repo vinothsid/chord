@@ -406,10 +406,12 @@ char* framePacket(char* method,short int keyID, struct  Node* hostNode, struct N
 		printf("framePacket() : Host : %s\n ",host);
 	}
 		char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-		char *val[15] = {method , itoa(keyID),host,contact}; 
+		char *tempID = itoa(keyID);
+		char *val[15] = {method , tempID ,host,contact}; 
 		//printf("after val\n");	
 		pkt = (char *)malloc(BLEN*sizeof(char));
 		utilFramePacket(attr,val,pkt);
+		free(tempID);
 		if (debug == 1) {
 			//printf("framePacket(): returned from utilFramePacket()\n");
 		}
@@ -480,6 +482,7 @@ char *recvPkt(int sock) {
 	recBptr=recBuf;
         buflen=BLEN;
 	
+//	pthread_mutex_lock(&tableMutex);
 	while ((n=recv(sock,recBptr,buflen,0))>0) {
                 buflen -=n;
 	/*	if (debug == 1) {
@@ -495,6 +498,7 @@ char *recvPkt(int sock) {
 
         }
 
+//	pthread_mutex_unlock(&tableMutex);
 	recBuf[recBptr-recBuf+1] = '\0';
 	if (debug == 1) {
 		printTime();
@@ -608,12 +612,13 @@ int putKey() {
         // if the host in the msg is its succ then it updates its succ with the contact node
 
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT","PRED.ID" } ;
-        char *val[15] = {"PUTKEY" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(pred),itoa(pred->keyID)};
+	char *tempID = itoa(finger[0]->keyID);
+        char *val[15] = {"PUTKEY" , tempID ,nodeToString(finger[0]),nodeToString(pred),itoa(pred->keyID)};
         requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
         printf("putKey() : Packet : \n ");
-
+	free(tempID);
         sock=tcpConnect(finger[1]);
         sendPkt(sock,requestPkt);
 	
@@ -654,11 +659,13 @@ int leave() { // making int to check if leave is successfull
 	// Wait till stabilize is completed fully	
 	}
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT","SUCC.ID" } ;
-        char *val[15] = {"LEAVE" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[1]),itoa(finger[1]->keyID)};
+	char *tempID =  itoa(finger[0]->keyID);
+        char *val[15] = {"LEAVE" , tempID,nodeToString(finger[0]),nodeToString(finger[1]),itoa(finger[1]->keyID)};
         requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
         printf("leave() : Packet : \n ");
+	free(tempID);
 
         sock=tcpConnect(pred);
         sendPkt(sock,requestPkt);
@@ -713,12 +720,14 @@ void stabilize() {
 //	}
 
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-        char *val[15] = {"STAB" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
+	char *tempID = itoa(finger[0]->keyID);
+        char *val[15] = {"STAB" , tempID ,nodeToString(finger[0]),nodeToString(finger[0])};
 	requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
         printf("stabilize(): sending pkt to %d  \n ",finger[1]->keyID);
 
+	free(tempID);
 	sock=tcpConnect(finger[1]);
         sendPkt(sock,requestPkt);
 	
@@ -768,12 +777,13 @@ void notify() {
   //      }
 
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-        char *val[15] = {"NOTIFY" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
+	char *tempID =  itoa(finger[0]->keyID);
+        char *val[15] = {"NOTIFY" , tempID ,nodeToString(finger[0]),nodeToString(finger[0])};
         requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
         printf("notify()  \n ");
-
+	free(tempID);
         sock=tcpConnect(finger[1]);
         sendPkt(sock,requestPkt);
 
@@ -872,10 +882,12 @@ int getRFCrequest(int id, struct Node* rfcOwner) {
 	//strcpy(rfcOwner->ipstr,"127.0.0.1");
 	//rfcOwner->port=5000;
 	char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-        char *val[15] = {"GETRFC" , itoa(id), nodeToString(finger[0]),nodeToString(rfcOwner)};
+	char *tempID = itoa(id);
+        char *val[15] = {"GETRFC" , tempID , nodeToString(finger[0]),nodeToString(rfcOwner)};
         requestPkt = (char *)malloc(BLEN*sizeof(char));
 
         utilFramePacket(attr,val,requestPkt);
+	free(tempID);
 	sock = tcpConnect(rfcOwner);
         if (sock==-1) {
                 perror ("Socket is not established properly");
@@ -928,10 +940,12 @@ void joinResponse (struct msgToken *msgsock){
 	char *m1,*m2;
 	str->keyID = randn();
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-        char *val[15] = {"200" , itoa(str->keyID),nodeToString(finger[0]),"NULL:NULL"};
+	char *tempID =  itoa(str->keyID) ;
+        char *val[15] = {"200" , tempID ,nodeToString(finger[0]),"NULL:NULL"};
 	m1=(char *)malloc(BLEN*sizeof(char));
         utilFramePacket(attr,val,m1);
 	printf("joinResponse() \n ");
+	free(tempID);
 	sendPkt(sock,m1);
 	close(sock);
 	totalPeers++;
@@ -954,11 +968,13 @@ void getResponse (struct msgToken *msgsock){
 	str=token(msgsock->ptr);
 	sock=msgsock->sock;
 	printf("\nIt is in GETRESPONSE thread now...congo...2...\n");
+	char *tempID=NULL;
 
 	if (finger[0]->keyID == finger[1]->keyID) {
 //For the first peer alone this condition will be true 
                 char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-                char *val[15] = {"200" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+		tempID = itoa(finger[1]->keyID);
+                char *val[15] = {"200" , tempID ,nodeToString(finger[0]),nodeToString(finger[1])};
                 utilFramePacket(attr,val,m1);
                 //printf("getResponse() : Packet : \n%s\n ",m1);
                 sendPkt(sock,m1);
@@ -969,7 +985,8 @@ void getResponse (struct msgToken *msgsock){
 	} else if (finger[1]->keyID ==0 && str->keyID > finger[0]->keyID  ) {
 //The node lies between last peer and peer 0
                 char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-                char *val[15] = {"200" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+		tempID = itoa(finger[1]->keyID);
+                char *val[15] = {"200" , tempID ,nodeToString(finger[0]),nodeToString(finger[1])};
                 utilFramePacket(attr,val,m1);
                 //printf("getResponse() : Packet : \n%s\n ",m1);
                 sendPkt(sock,m1);
@@ -980,7 +997,8 @@ void getResponse (struct msgToken *msgsock){
 	} else if (liesBetween(str->keyID,finger[0]->keyID,finger[1]->keyID) ) {
 //Found the actual successor . 
 	        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-	        char *val[15] = {"200" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+		tempID = itoa(finger[1]->keyID);
+	        char *val[15] = {"200" , tempID ,nodeToString(finger[0]),nodeToString(finger[1])};
 	        utilFramePacket(attr,val,m1);
         	//printf("getResponse() : Packet : \n%s\n ",m1);
 	        sendPkt(sock,m1);
@@ -1007,7 +1025,8 @@ void getResponse (struct msgToken *msgsock){
 */
 		if ( liesBetween(str->keyID,finger[3]->keyID,0)) {
 		        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-                	char *val[15] = {"305" , itoa(finger[3]->keyID),nodeToString(finger[0]),nodeToString(finger[3])};
+			tempID = itoa(finger[3]->keyID);
+                	char *val[15] = {"305" , tempID,nodeToString(finger[0]),nodeToString(finger[3])};
                         utilFramePacket(attr,val,m1);
                   //              printf("getResponse() : Packet : \n%s\n ",m1);
                         sendPkt(sock,m1);
@@ -1019,7 +1038,8 @@ void getResponse (struct msgToken *msgsock){
 
                 if ( liesBetween(str->keyID,finger[2]->keyID,finger[3]->keyID)) {
                         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-                        char *val[15] = {"305" , itoa(finger[2]->keyID),nodeToString(finger[0]),nodeToString(finger[2])};
+			tempID = itoa(finger[2]->keyID);
+                        char *val[15] = {"305" , tempID ,nodeToString(finger[0]),nodeToString(finger[2])};
                         utilFramePacket(attr,val,m1);
                   //              printf("getResponse() : Packet : \n%s\n ",m1);
                         sendPkt(sock,m1);
@@ -1032,7 +1052,8 @@ void getResponse (struct msgToken *msgsock){
 
                 if ( liesBetween(str->keyID,finger[1]->keyID,finger[2]->keyID)) {
                         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-                        char *val[15] = {"305" , itoa(finger[1]->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+			tempID = itoa(finger[1]->keyID);
+                        char *val[15] = {"305" , tempID , nodeToString(finger[0]),nodeToString(finger[1])};
                         utilFramePacket(attr,val,m1);
                   //              printf("getResponse() : Packet : \n%s\n ",m1);
                         sendPkt(sock,m1);
@@ -1046,7 +1067,8 @@ void getResponse (struct msgToken *msgsock){
 	}
 
 	char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-	char *val[15] = {"200" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
+	tempID = itoa(finger[0]->keyID);
+	char *val[15] = {"200" , tempID , nodeToString(finger[0]),nodeToString(finger[0])};
         utilFramePacket(attr,val,m1);
         //printf("getResponse() : Packet : \n%s\n ",m1);
         sendPkt(sock,m1);
@@ -1076,7 +1098,7 @@ void getrfcResponse (struct msgToken *msgsock){
 void stabResponse (struct msgToken *msgsock){
 	int sock;
 	struct Msg* str;
-	char *m1;
+	char *m1,*tempID;
 	m1=(char *)malloc(BLEN *sizeof (char));
 	str=token(msgsock->ptr);
 	sock=msgsock->sock;
@@ -1093,14 +1115,16 @@ void stabResponse (struct msgToken *msgsock){
         	        finger[1]->port=str->contactPort;
 
 		}
-        	char *val[15] = {"100" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};//
+		tempID = itoa(finger[0]->keyID);
+        	char *val[15] = {"100" , tempID,nodeToString(finger[0]),nodeToString(finger[0])};//
         	utilFramePacket(attr,val,m1);
 	} else {
+		tempID = itoa(pred->keyID);
 		if (!leaveFlag ) {
-		        char *val[15] = {"100" , itoa(pred->keyID),nodeToString(finger[0]),nodeToString(pred)};
+		        char *val[15] = {"100" ,tempID , nodeToString(finger[0]),nodeToString(pred)};
 	        	utilFramePacket(attr,val,m1);
 		} else {
-                        char *val[15] = {"100" , itoa(pred->keyID),nodeToString(finger[0]),nodeToString(finger[1])};
+                        char *val[15] = {"100" , tempID , nodeToString(finger[0]),nodeToString(finger[1])};
                         utilFramePacket(attr,val,m1);
 		}
 	}
@@ -1143,8 +1167,8 @@ void notifyResponse (struct msgToken *msgsock){
 //        pthread_mutex_unlock(&tableMutex);
 
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
-
-        char *val[15] = {"110" , itoa(finger[0]->keyID),nodeToString(finger[0]),nodeToString(finger[0])};
+	char *tempID = itoa(finger[0]->keyID);
+        char *val[15] = {"110" , tempID , nodeToString(finger[0]),nodeToString(finger[0])};
         utilFramePacket(attr,val,m1);
         printf("notifyResponse() \n ");
         sendPkt(sock,m1);
@@ -1281,7 +1305,9 @@ int tcpServer(struct Node *n)
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE; // use my IP
-	if ((rv = getaddrinfo(NULL,itoa(n->port), &hints, &servinfo)) != 0) {
+
+	char *tempPort = itoa(n->port);
+	if ((rv = getaddrinfo(NULL,tempPort, &hints, &servinfo)) != 0) {
 
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 		return 1;
@@ -1322,7 +1348,7 @@ int tcpServer(struct Node *n)
 	}
 
 	printf("server: waiting for connections...\n");
-
+	free(tempPort);
     
 	while(1) {  // main accept() loop
 		sin_size = sizeof their_addr;
@@ -1425,6 +1451,7 @@ void *serverThread (void *a){
 	Action(msgsock);
 	close(sockDesc);
 	free(a);
+	free(msgsock->ptr);
 	return;
 			
 }
@@ -1529,7 +1556,8 @@ int leaveResponse (struct msgToken *msgsock) {
 	printTable();
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 
-        char *val[15] = {"230" , itoa(finger[0]->keyID),nodeToString(finger[0]),"0.0.0.0:0" };
+	char *tempID = itoa(finger[0]->keyID) ;
+        char *val[15] = {"230" , tempID , nodeToString(finger[0]),"0.0.0.0:0" };
         utilFramePacket(attr,val,m1);
         printf("leaveResponse() \n");
         sendPkt(sock,m1);
@@ -1537,6 +1565,7 @@ int leaveResponse (struct msgToken *msgsock) {
 
 	free(m1);
 	free(str);
+	free(tempID);
 
 	return 0;
 }
@@ -1572,7 +1601,8 @@ int putKeyResponse (struct msgToken *msgsock) {
 	printTable();
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 
-        char *val[15] = {"240" , itoa(finger[0]->keyID),nodeToString(finger[0]),"0.0.0.0:0" };
+	char *tempID = itoa(finger[0]->keyID) ;
+        char *val[15] = {"240" , tempID , nodeToString(finger[0]),"0.0.0.0:0" };
         utilFramePacket(attr,val,m1);
         printf("putKeyResponse()\n");
         sendPkt(sock,m1);
@@ -1583,6 +1613,7 @@ int putKeyResponse (struct msgToken *msgsock) {
         free(m1);
         free(str);
 	free(tempNode);
+	free(tempID);
         return 0;
 }
 
