@@ -467,8 +467,26 @@ int sendPkt(int sock,char *buf) {
 		printTime();	
 		printf("sendPkt() : Sending pkt:\n%s\n",buf);
 	}
+	int total = 0;        // how many bytes we've sent
+   	int bytesleft = strlen(buf); // how many we have left to send
+    	int n;
+	char *tempBuf=buf;
 
-	return send(sock, buf, strlen(buf) ,0);
+    	while(total < strlen(buf)) {
+        	n = send(sock, tempBuf+total, bytesleft, 0);
+        	if (n == -1) { break; }
+        		total += n;
+        		bytesleft -= n;
+    		}
+
+   // *len = total; // return number actually sent here
+
+    //return n==-1?-1:0; // return -1 on failure, 0 on success
+	//free(tempBuf);
+	//free(buf);
+	return 1;
+
+//	return send(sock, buf, strlen(buf) ,0);
 }
 
 /***************************************** RECEIVE PACKET ***************************************/
@@ -1587,7 +1605,7 @@ void fixFingers(){
 	if ( temp!=NULL) {
 		free(temp);
 	}
-       return 0;
+       //return 0;
 
 }
 
