@@ -168,6 +168,7 @@ void *UnknownID() {
 	
 	for(i=0;i<j;i++){
 	printf("\nThe value of finger[0]->keyID before calling lookupCounter(): %d\n",finger[0]->keyID);
+	sleep(1);
 	hops=lookupCounter(IDArray[i]);
 	printf("\n********The number of counts required for the lookup of ID %d is : %d\n",IDArray[i],hops);
 	}

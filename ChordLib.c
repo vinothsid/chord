@@ -613,7 +613,7 @@ int liesBetween(id,start,end) {
 			return 0;
 		}
 	} else {
-		if ( id>start ) {
+		if ( id>start || id < end ) {
 			return 1;
 		} else {
 			return 0;
