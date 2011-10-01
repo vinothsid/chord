@@ -504,6 +504,9 @@ char *recvPkt(int sock) {
 //In case we get erroneous packet of small size
 		if (recBuf[10]!='\0' )
 			break;
+		else {
+			continue;
+		}
 
         }
 
