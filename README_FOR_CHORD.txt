@@ -2,11 +2,11 @@ README - To COMPILE AND RUN CHORD LITE 1.0
 
 1.) Run the make file. Type make in the directory that contains ChordLib.c and the rest of the code.
 2.) Start the zeroeth peer. Type ./peerZero in the directory containing ChorLib.c and the rest of the code.
-3.) Run startChord.sh. This will copy the peer code into new directories by the name peer1, peer2, peer3 etc.
+3.) Run startChord.sh.Type ./starChord.sh. This will copy the peer code into new directories by the name peer1, peer2, peer3 etc.
 4.) Run a peer by going into the appropriate directory. Any directory you like! The number after peer will help
     distinguish peers.
 5.) The rfc's downloaded will be downloaded into directory by the name rfcBase under the peer[0-9] directories corresponding
-    to the peers.
+    to the peers. Originally all rfc's are located under the directory where source code is downloaded in a directory named rfcBase.
 
 FOR PEERZERO CHANGE THE FOLLOWING ATTRIBUTES in ChordLib.h
 
