@@ -146,7 +146,7 @@ void *UnknownID() {
 	while(i<10)
 	{
 		
-                if( liesBetween(KEYS[count] , pred->keyID,finger[0]->keyID)==0)
+                if( liesBetween(KEYS[count] , pred->keyID,finger[0]->keyID)==1)
 		{
 		printf("lies between is wrong");	
 		
