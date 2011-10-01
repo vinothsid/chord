@@ -70,15 +70,6 @@ struct Node* findSuccessorClient(int id){
 //	return finger[1];
 
 	id=id%1024;
-/*	struct Node *n=(struct Node*)malloc(sizeof(struct Node));
-        n->keyID = 1035;
-        strcpy(n->ipstr,"127.0.0.1");
-        n->port = 5000;
-        n->next = NULL;
-        if (debug == 1 ) {
-                printf("findSuccessorClient()\n ");
-        }
-*/
 /* TO DO : If all finger is nil , then return origin*/
 	int i =0;
 	int nilCounter=0;
@@ -123,7 +114,7 @@ struct Node* findSuccessorClient(int id){
 		}
 	}	
 	
-	return NULL;
+	return finger[0];
 }
 /******************************************* INIT FINGER TABLE ***************************************/
 
@@ -151,7 +142,7 @@ void initFingerTable( char *ip,int port ) {
 	}
 
 //finger[4] should not be used .It is not part of finger table.Its only place holder for peer zero.
-	finger[4]=origin;
+	finger[4]=finger[0];
 //Initialise the self values
 	strcpy(finger[0]->ipstr,ip);
 	finger[0]->port = port;
@@ -322,7 +313,7 @@ struct Node * lookup(short int id) {
 		free(requestPkt);
 		free(responsePkt);
 		free(m2);
-		free(n2);
+		//free(n2);
 		free(n3);
 		return n;
 
@@ -876,6 +867,7 @@ void printTable() {
 int triggerSingleRFC(int id) {
 	struct Node* rfcOwner;
 	rfcOwner=lookup(id);
+	printf("\nrfcOwner is :%d\n",rfcOwner->keyID);
 	getRFCrequest(id, rfcOwner);
 	free(rfcOwner);
 	return 1;
@@ -1374,6 +1366,7 @@ int Action(struct msgToken* msgsock){
                         else if(strcmp(gotMsg->method,goHome)==0){
                                 printf("Got gohome......\n");
 				leave();
+
                         }
 
 
@@ -1734,5 +1727,35 @@ int printTime() {
 	printf("%s%ld\n",buffer,tv.tv_usec);
 
 	return 0;
+
+}
+
+
+
+void *getInput() {
+        char buf[25];
+        int n,i,keyID;
+        char id[5];
+        while ((n = read(0, buf, 24)) > 0) {
+                printf("Read value %s",buf);
+                if ( strcmp(buf,"leave\n")==0 ) {
+                        printf("The Node %d is leaving\n ",finger[0]->keyID);
+                        leave();
+                }
+                else if(strncmp(buf,"GET",3)==0 ) {
+                        for (i=0;i<4;i++) {
+                                id[i]=buf[4+i];
+                        }
+                        id[4]='\0';
+                        keyID = atoi(id);
+                        printf("GETTING rfc for id  %d\n",keyID);
+                        triggerSingleRFC(keyID);
+
+                }
+                memset(buf,0,25);
+
+        }
+        return 0;
+
 
 }

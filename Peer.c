@@ -39,38 +39,38 @@ void *stabilizeThread() {
 
 int main(int argc, char *argv[])
 {
-	int i=0;
-	char *t;
-	struct Node *selfNode;
-	pthread_t threadClient,threadServer,threadStabilize;
-	selfNode = (struct Node *)malloc(sizeof(struct Node));
-	strcpy(selfNode->ipstr,argv[1]);
-	selfNode->port = atoi(argv[2]);
-	printf("Peer with server address : %s:%s joining\n",argv[1],argv[2]);
-	printf ("\n CHORD LIGHT IS NOW LISTENING ");
+        int i=0;
+        char *t;
+        struct Node *selfNode;
+        pthread_t threadClient,threadServer,threadStabilize,threadGetInput;
+        selfNode = (struct Node *)malloc(sizeof(struct Node));
+        strcpy(selfNode->ipstr,argv[1]);
+        selfNode->port = atoi(argv[2]);
+        printf("Peer with server address : %s:%s joining\n",argv[1],argv[2]);
+        printf ("\n CHORD LIGHT IS NOW LISTENING ");
 
 
-//	tcpServer();
-//	sleep(2);
-//	if (!fork()) s{
-//		while(1) {
-//			sleep(5);
-//			printf("Stabilize thread\n");
-//			stabilize();
-//		}
-			
-//	} else {
-	pthread_create(&threadServer,NULL,PeerServer,(void *)selfNode);
+//        tcpServer();
+//        sleep(2);
+//        if (!fork()) s{
+//                while(1) {
+//                        sleep(5);
+//                        printf("Stabilize thread\n");
+//                        stabilize();
+//                }
+                        
+//        } else {
+        pthread_create(&threadServer,NULL,PeerServer,(void *)selfNode);
 
-	pthread_create(&threadClient,NULL,PeerClient,(void *)selfNode);
-//	}
-	pthread_create(&threadStabilize,NULL,stabilizeThread,NULL);
+        pthread_create(&threadClient,NULL,PeerClient,(void *)selfNode);
+//        }
+        pthread_create(&threadStabilize,NULL,stabilizeThread,NULL);
 
-	
-	pthread_join(threadServer,NULL);	
-	pthread_join(threadClient,NULL);
-	pthread_join(threadStabilize,NULL);
+        pthread_create(&threadGetInput,NULL,getInput,NULL);
+        
+        pthread_join(threadServer,NULL);        
+        pthread_join(threadClient,NULL);
+        pthread_join(threadStabilize,NULL);
 }
-
 
 
