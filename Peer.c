@@ -146,7 +146,7 @@ void *UnknownID() {
 	while(i<10)
 	{
 		
-                if(KEYS[count]>pred->keyID&&KEYS[count]<=finger[0]->keyID)
+                if( liesBetween(KEYS[count] , pred->keyID,finger[0]->keyID)==0)
 		{
 		printf("lies between is wrong");	
 		
@@ -168,7 +168,6 @@ void *UnknownID() {
 	
 	for(i=0;i<j;i++){
 	printf("\nThe value of finger[0]->keyID before calling lookupCounter(): %d\n",finger[0]->keyID);
-	sleep(1);
 	hops=lookupCounter(IDArray[i]);
 	printf("\n********The number of counts required for the lookup of ID %d is : %d\n",IDArray[i],hops);
 	}

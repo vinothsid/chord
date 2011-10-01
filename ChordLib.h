@@ -19,7 +19,7 @@
 #define VERSION "1.0"
 #define BLEN 300
 #define LISTENQUEUE 10
-#define PEER_ZERO_IP "127.0.0.1"
+#define PEER_ZERO_IP "192.168.15.4"
 #define PEER_ZERO_PORT 5000
 #define RFC_PATH "rfcBase/"
 //int debug=1;
