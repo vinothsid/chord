@@ -29,8 +29,6 @@ int main()
 	int i=0;
 	char *t;
 	pthread_t threadClient,threadServer,threadStabilize ;
-	printf("Hello how are you ??\n");
-	printf ("\nConnecting to the CHORD LIGHT SYSTEM.........");
 	printf ("\n CHORD LIGHT IS NOW LISTENING ");
 
 	totalPeers=0;

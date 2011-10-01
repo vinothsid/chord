@@ -1071,7 +1071,23 @@ void getResponse (struct msgToken *msgsock){
 		free(tempStr2);
 		free(tempID);
 		return;
-        } else {
+        } else if (pred->keyID!=-1 && liesBetween(str->keyID,pred->keyID,finger[0]->keyID)) {
+	        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
+        	tempID = itoa(finger[0]->keyID);
+	        tempStr1 = nodeToString(finger[0]);
+
+        	char *val[15] = {"200" , tempID , tempStr1,tempStr1};
+	        utilFramePacket(attr,val,m1);
+	        //printf("getResponse() : Packet : \n%s\n ",m1);
+        	sendPkt(sock,m1);
+        	close(sock);
+	        free(m1);
+        	free(str);
+	        free(tempStr1);
+        	free(tempID);
+	        return;
+
+	} else {
 
 /*major change
              for (i=3; i>1; i--) {
@@ -1088,7 +1104,7 @@ void getResponse (struct msgToken *msgsock){
                 }
 
 */
-		if ( liesBetween(str->keyID,finger[3]->keyID,0)) {
+		if ( liesBetween(str->keyID,finger[3]->keyID,finger[0]->keyID)) {
 		        char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 			tempID = itoa(finger[3]->keyID);
 	                tempStr1 = nodeToString(finger[0]);
@@ -1727,50 +1743,136 @@ int putKeyResponse (struct msgToken *msgsock) {
         return 0;
 }
 
-int printTime() {
-	char buffer[30];
-	struct timeval tv;
-
-	time_t curtime;
 
 
 
-	gettimeofday(&tv, NULL);
-	curtime=tv.tv_sec;
+struct timeval printTime() {
+        char buffer[30];
+        struct timeval tv;
 
-	strftime(buffer,30,"%m-%d-%Y  %T.",localtime(&curtime));
-	printf("%s%ld\n",buffer,tv.tv_usec);
+        time_t curtime;
 
-	return 0;
+
+
+        gettimeofday(&tv, NULL);
+        curtime=tv.tv_sec;
+
+        strftime(buffer,30,"%m-%d-%Y  %T.",localtime(&curtime));
+        printf("%s%ld\n",buffer,tv.tv_usec);
+
+        return tv;
 
 }
 
+int timeval_subtract(struct timeval *result, struct timeval *t1, struct timeval *t2)
+{
+    long int diff = (t2->tv_usec + 1000000 * t2->tv_sec) - (t1->tv_usec + 1000000 * t1->tv_sec);
+    result->tv_sec = diff / 1000000;
+    result->tv_usec = diff % 1000000;
 
+    return (diff<0);
+}
 
-void *getInput() {
-        char buf[25];
-        int n,i,keyID;
-        char id[5];
-        while ((n = read(0, buf, 24)) > 0) {
-                printf("Read value %s",buf);
-                if ( strcmp(buf,"leave\n")==0 ) {
-                        printf("The Node %d is leaving\n ",finger[0]->keyID);
-                        leave();
+/******************************lookup1*******************************************************/
+int lookupCounter(int id) {
+        int time;
+        struct timeval start,end,result;
+        start = printTime();
+        int hop=0;
+        id=id%1024;
+        //printf("4444444444\n");
+        struct Node *n;
+        struct Node *n2;
+        struct Node *n3;
+        n=(struct Node *)malloc(sizeof(struct Node));
+        n3=(struct Node *)malloc(sizeof(struct Node));
+        struct Msg  *m2;
+        int sock;
+        //int sock1;
+        char respCode[15];
+        char *requestPkt, *responsePkt;
+        //old test code
+        /*n=(struct Node*)malloc(sizeof(struct Node));
+        n->keyID = 1011;
+        strcpy(n->ipstr,"127.0.0.1");
+        n->port = 5000;
+        n->next = NULL;
+        if (debug == 1 ) {
+                printf("lookup() ");
+        }
+        return n;*/
+        //end of old test code
+        //printf("4444444444\n");
+        printf("The value of fingerID 0 before entering findSuccessor:%d\n",finger[0]->keyID);
+        printf("The value of fingerID 1 before entering findSuccessor:%d\n",finger[1]->keyID);
+
+printf("Entering to check this ID :%d",id);
+        n2 = findSuccessorClient(id);
+        if (n2==NULL) {
+                perror("Find Successor Client returned NULL");
+                exit(1);
+        }
+
+        if (debug==1) {
+                printf("lookup(): value returned from findSuccessorClient keyID: %d ip:%s port: %d\n",n2->keyID,n2->ipstr,n2->port);
+        }
+        if (n2->keyID == finger[0]->keyID){
+                return hop;
+        }
+        requestPkt=framePacket("GET",id, finger[0], n2);
+
+//sleep(2);
+        sock = tcpConnect(n2);
+        sendPkt(sock, requestPkt);
+        responsePkt=recvPkt(sock);
+        close(sock);
+        m2=token(responsePkt);
+        strcpy(respCode,m2->method);
+        if (debug == 1) {
+                printf("lookup() 1 : MSG struct values . method : %s , keyId : %d ,hostIp: %s,hostPort: %d,contactIp: %s,contactPort: %d\n",m2->method,m2->keyID,m2->hostIP,m2->hostPort,m2->contactIP,m2->contactPort);
+        }
+        while (strcmp(m2->method,"305")==0) {
+                hop++;
+                strcpy(n3->ipstr, m2->contactIP);
+                n3->port = m2->contactPort;
+                requestPkt = framePacket("GET", id, finger[0], n3);
+                sock = tcpConnect(n3);
+                sendPkt(sock, requestPkt);
+                responsePkt=recvPkt(sock);
+                close(sock);
+                m2 = token(responsePkt);
+                strcpy(respCode,m2->method);
+                if (debug == 1) {
+                        printf("lookup() redirection : MSG struct values . method : %s , keyId : %d ,hostIp: %s,hostPort: %d,contactIp: %s,contactPort: %d\n",m2->method,m2->keyID,m2->hostIP,m2->hostPort,m2->contactIP,m2->contactPort);
                 }
-                else if(strncmp(buf,"GET",3)==0 ) {
-                        for (i=0;i<4;i++) {
-                                id[i]=buf[4+i];
-                        }
-                        id[4]='\0';
-                        keyID = atoi(id);
-                        printf("GETTING rfc for id  %d\n",keyID);
-                        triggerSingleRFC(keyID);
-
-                }
-                memset(buf,0,25);
 
         }
+
+        if (strcmp(m2->method,"200")==0) {
+                hop++;
+//              strcpy(n->ipstr,m2->contactIP);
+//              n->port = m2->contactPort;
+//              n->keyID=m2->keyID;
+//              if (debug==1) {
+//                      printf("lookup() : Actual Successor info :  , keyId: %d\n\n",n->keyID);
+//              }
+                end= printTime();
+//When following free statements are executed seg fault occuring
+                free(requestPkt);
+                free(responsePkt);
+                free(m2);
+        //      free(n2);
+        //      free(n3);
+                time=timeval_subtract(&result,&start,&end);
+                printf("\nThe time difference is %ld.%06ld \n",result.tv_sec,result.tv_usec);
+
+                return hop;
+
+        }
+
+        printf("lookup failed and returning NULL\n");
         return 0;
-
-
 }
+/******************time diff******************************************************/
+
+
