@@ -21,7 +21,7 @@
 #define LISTENQUEUE 10
 #define PEER_ZERO_IP "127.0.0.1"
 #define PEER_ZERO_PORT 5000
-#define RFC_PATH "./rfcBASE/"
+#define RFC_PATH "rfcBase/"
 //int debug=1;
 //#define log(funcName,str,variable) if (debug ==1) { printf("
 //#define log(a,b,c) if(debug) printf("%s ... %s ... %s", a, b, c);

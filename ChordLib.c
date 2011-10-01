@@ -512,6 +512,9 @@ char *recvPkt(int sock) {
 
 //	pthread_mutex_unlock(&tableMutex);
 	recBuf[recBptr-recBuf+1] = '\0';
+	if (strlen(recBuf)==0) {
+		printf("Received packet is null\n");
+	}
 	if (debug == 1) {
 		printTime();
 		printf("\nrecvPkt() : Received pkt:\n%s",recBuf);
@@ -522,6 +525,12 @@ char *recvPkt(int sock) {
 
 struct Msg* token(char *str1)
 {
+
+	if (strlen(str1)==0) {
+		printf("String passed to token() is NULL\n");
+		return NULL;
+	}
+		 
 	pthread_mutex_lock( &mutex1 );
         struct Msg* rcvMsg;
         char str[300];
@@ -648,6 +657,7 @@ int putKey() {
 		free(m1);	
 		free(responsePkt);
                 printf("Acknowledgement for putKey is received\n");
+		printf("The node can be killed after the entire set of rfc is transferred\n");
 		return 0;
         } else {
 		free(requestPkt);
@@ -901,7 +911,7 @@ int getRFCBetween(int start,int end,struct Node *n ) {
 
 int getRFCrequest(int id, struct Node* rfcOwner) {
 	int sock;
-	char* rfcDest;
+	char rfcDest[30]=RFC_PATH;
 	char* requestPkt;
 	char* responsePkt;
 	//struct Node* rfcOwner;
@@ -926,7 +936,9 @@ int getRFCrequest(int id, struct Node* rfcOwner) {
                 perror ("Socket is not established properly");
         }
 	//free(rfcOwner);
-	rfcDest=findRFCfromID(id);
+	//strcat(rfcDest,RFC_PATH);
+	strcat(rfcDest,findRFCfromID(id));
+	printf("File will be written to : %s\n", rfcDest);
 	//requestPkt="hello\n";
         sendPkt(sock,requestPkt);
 	printf("getRFCrequest(): Receiving file %s corresponding to id %d from node %d \n", rfcDest,id,rfcOwner->keyID);
@@ -966,7 +978,7 @@ void joinResponse (struct msgToken *msgsock){
 	str=token(msgsock->ptr);
 	sock=msgsock->sock;
 	
-	printf("\nIt is in JOINRESPONSE thread now...congo...1...\n");
+	//printf("\nIt is in JOINRESPONSE thread now...congo...1...\n");
 
 	int respSock;
 	struct Msg *m;
@@ -1003,7 +1015,7 @@ void getResponse (struct msgToken *msgsock){
         m1=(char *)malloc(BLEN*sizeof(char));
 	str=token(msgsock->ptr);
 	sock=msgsock->sock;
-	printf("\nIt is in GETRESPONSE thread now...congo...2...\n");
+	//printf("\nIt is in GETRESPONSE thread now...congo...2...\n");
 	char *tempID=NULL;
 	char *tempStr1=NULL;
 	char *tempStr2=NULL;
@@ -1166,7 +1178,7 @@ void getrfcResponse (struct msgToken *msgsock){
 	id=findRFCfromID(str->keyID);
 	strcat(path,id);
 	sendRFC(sock,path);
-	printf("\nIt is in GETRFC thread now...congo...3...\n");
+	//printf("\nIt is in GETRFC thread now...congo...3...\n");
 	free(str);
 }
 
@@ -1180,7 +1192,7 @@ void stabResponse (struct msgToken *msgsock){
 	str=token(msgsock->ptr);
 	sock=msgsock->sock;
 
-	printf("\nIt is in STAB thread now...congo...4...\n");
+	//printf("\nIt is in STAB thread now...congo...4...\n");
 	
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 
@@ -1235,7 +1247,7 @@ void notifyResponse (struct msgToken *msgsock){
         str=token(msgsock->ptr);
         sock=msgsock->sock;
 
-        printf("\nIt is in Notify thread now...congo...4...\n");
+        //printf("\nIt is in Notify thread now...congo...4...\n");
 
 //        pthread_mutex_lock(&tableMutex);
 
