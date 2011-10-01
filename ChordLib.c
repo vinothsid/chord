@@ -179,7 +179,7 @@ int join (char *ip,int port) {
 	close(sock);	
 	m2=token(responsePkt);
 	if (debug==1) {
-		printf("MSG struct values . method : %s , keyId : %d ,hostIp: %s,hostPort: %d,contactIp: %s,contactPort: %d\n",m2->method,m2->keyID,m2->hostIP,m2->hostPort,m2->contactIP,m2->contactPort);
+//		printf("MSG struct values . method : %s , keyId : %d ,hostIp: %s,hostPort: %d,contactIp: %s,contactPort: %d\n",m2->method,m2->keyID,m2->hostIP,m2->hostPort,m2->contactIP,m2->contactPort);
 	}
 	finger[0]->keyID = m2->keyID;// m2->keyID;
 	finger[0]->sblNo = 0; //m2->sblNoMsg;
@@ -517,7 +517,7 @@ char *recvPkt(int sock) {
 	}
 	if (debug == 1) {
 		printTime();
-		printf("\nrecvPkt() : Received pkt:\n%s",recBuf);
+		printf("recvPkt() : Received pkt:\n%s",recBuf);
 	}	
 	return recBuf;
 
@@ -850,7 +850,7 @@ void rcvRFC(int sockfd, char *name ){
         recBptr=recBuf;
         buflen=300;
 
-        printf("Received : \n");
+        printf("Received RFC. \n");
         while ((n=recv(sockfd,recBuf,buflen,0))>0) {
 		recBuf[n]='\0';
      		fputs(recBuf,wf);
@@ -862,7 +862,7 @@ void rcvRFC(int sockfd, char *name ){
 //			close(sockfd);
         }	
         fclose(wf);
-        printf("Fclse done\n");
+//        printf("Fclse done\n");
 	close(sockfd); 
 
 	free(recBuf);
@@ -880,7 +880,7 @@ void printTable() {
 int triggerSingleRFC(int id) {
 	struct Node* rfcOwner;
 	rfcOwner=lookup(id);
-	printf("\nrfcOwner is :%d\n",rfcOwner->keyID);
+	printf("\nrfcOwner for id %d is :%d\n",id,rfcOwner->keyID);
 	getRFCrequest(id, rfcOwner);
 	free(rfcOwner);
 	return 1;
@@ -1257,7 +1257,7 @@ void notifyResponse (struct msgToken *msgsock){
        	        pred->port=str->contactPort;
 	} else {
 		if(liesBetween(str->keyID,pred->keyID,finger[0]->keyID)==1) {
-				printf("Pred lies between its own pred and self\n");
+//			printf("Pred lies between its own pred and self\n");
 	                pred->keyID=str->keyID;
 	                strcpy(pred->ipstr,str->contactIP);
         	        pred->port=str->contactPort;
@@ -1489,7 +1489,7 @@ int tcpServer(struct Node *n)
 		threadCount = (threadCount+1)%20;
 
 	}
-	printf("IT IS GETTING OUT OF TCP SERVER\n");
+//	printf("IT IS GETTING OUT OF TCP SERVER\n");
 	return 0;
 }
 
@@ -1546,7 +1546,7 @@ void *serverThread (void *a){
 	struct msgToken* msgsock;
 	int *temp = (int *)a;
 	int sockDesc = *temp;
-	printf("Socket descriptor : %d\n",sockDesc);
+//	printf("Socket descriptor : %d\n",sockDesc);
 	//close(sockfd); // child doesn't need the listener
 	//msg1=malloc(BLEN);
 	msg1=recvPkt(sockDesc);
@@ -1649,7 +1649,7 @@ int leaveResponse (struct msgToken *msgsock) {
         str=token(msgsock->ptr);
         sock=msgsock->sock;
 
-        printf("\nIt is in leave thread now..\n");
+ //       printf("\nIt is in leave thread now..\n");
 
 //        pthread_mutex_lock(&tableMutex);
 
@@ -1686,7 +1686,7 @@ int putKeyResponse (struct msgToken *msgsock) {
         str=token(msgsock->ptr);
         sock=msgsock->sock;
 
-        printf("\nIt is in putKeyResponse thread now..\n");
+   //     printf("\nIt is in putKeyResponse thread now..\n");
 
 //Host ip and host port are used to create to tempNode since stabilization thread may change the pred before getRFCBetween completes
 	struct Node *tempNode;
@@ -1706,7 +1706,7 @@ int putKeyResponse (struct msgToken *msgsock) {
 
         
 
-	printTable();
+//	printTable();
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
 
 	char *tempID = itoa(finger[0]->keyID) ;
