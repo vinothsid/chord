@@ -153,7 +153,7 @@ void *UnknownID() {
 		}else{
 
 				
-		IDArray[i]=KEYS[count];
+		IDArray[(i + randn())%50]=KEYS[count];
                 i++;
 		j++;
 		printf("thevalueofiis %d",i);
