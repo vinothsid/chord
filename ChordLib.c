@@ -1520,12 +1520,9 @@ char* findRFCfromID (int id) {
 
 /********************************send RFC*****************************************/
 void sendRFC(int new_fd,char *name) {
-//	pthread_mutex_lock( &mutex2 );
 	FILE *rf;
         int rlen;
-//	char *send_data='\0';
         rf=fopen(name,"r");
- //       send_data=(char *)malloc(300);
         int i=2;
         char seek[300];
         rlen=300;     
@@ -1533,23 +1530,14 @@ void sendRFC(int new_fd,char *name) {
                 memset(seek,0,300);
                 rlen=fread(seek,1,300,rf);
 		seek[300]='\0';
-             	//strcat(send_data,seek);
-                //send_data=(char *)realloc(send_data, i*600*sizeof(char));
 		send(new_fd,seek,strlen(seek), 0);
-               //	i++;
                 printf("\nThe value of rlen is %d\n",rlen);
         } while( rlen==300);
-//	rlen=strlen(send_data);
 	printf("\nThe value of rlen is %d\n",rlen);
-        //send_data[rlen]='\0';
-//	printf(send_data);
-	//send(new_fd,send_data,strlen(send_data), 0);
         sleep(2);
 	memset(seek,0,300);
-//	memset(send_data,0,strlen(send_data));
-//	free(send_data);
       	close(new_fd);	
-//	pthread_mutex_unlock( &mutex2 ); 
+	return;
 	
 }
 	
@@ -1583,18 +1571,6 @@ void fixFingers(){
 
 	struct Node *temp=NULL;
 	  
-//        pthread_mutex_lock(&tableMutex);
-
-//        struct Node *temp = lookup(finger[0]->keyID + 1);
-//        finger[1] = temp;
-//        if ( finger[1]==NULL ) {
-//                perror("First finger is NULL\n");
-//                exit(1);
- //       }
-
-  //      if (debug==1) {
-  //              printf("fixFingers() : Actual Successor info: %s , keyID : %d",nodeToString(finger[1]),finger[1]->keyID);
-  //      }
         //Set of instructions that set the finger table
         //Each time a lookup is performed a check is performed to check if 
         //the current finger is also the next finger
@@ -1618,18 +1594,10 @@ void fixFingers(){
         else
                 finger[3] = finger[2];
 
-       /* if (finger[3]->keyID < (finger[0]->keyID + 8)) {
-                finger[4] = lookup((finger[0]->keyID + 8));
-        }
-        else
-                finger[4] = finger[3];*/
-
-//       pthread_mutex_unlock(&tableMutex);
 
 	if ( temp!=NULL) {
 		free(temp);
 	}
-       //return 0;
 
 }
 
@@ -1667,14 +1635,12 @@ int leaveResponse (struct msgToken *msgsock) {
 
  //       printf("\nIt is in leave thread now..\n");
 
-//        pthread_mutex_lock(&tableMutex);
 
         finger[1]->keyID=str->succID;
         strcpy(finger[1]->ipstr,str->contactIP);
         finger[1]->port=str->contactPort;
 
 
-//        pthread_mutex_unlock(&tableMutex);
 
 	printTable();
         char *attr[15] = {"METHOD" , "ID" ,"HOST", "CONTACT" } ;
@@ -1791,22 +1757,10 @@ int lookupCounter(int id) {
         //int sock1;
         char respCode[15];
         char *requestPkt, *responsePkt;
-        //old test code
-        /*n=(struct Node*)malloc(sizeof(struct Node));
-        n->keyID = 1011;
-        strcpy(n->ipstr,"127.0.0.1");
-        n->port = 5000;
-        n->next = NULL;
-        if (debug == 1 ) {
-                printf("lookup() ");
-        }
-        return n;*/
-        //end of old test code
-        //printf("4444444444\n");
         printf("The value of fingerID 0 before entering findSuccessor:%d\n",finger[0]->keyID);
         printf("The value of fingerID 1 before entering findSuccessor:%d\n",finger[1]->keyID);
 
-printf("Entering to check this ID :%d",id);
+	printf("Entering to check this ID :%d",id);
         n2 = findSuccessorClient(id);
         if (n2==NULL) {
                 perror("Find Successor Client returned NULL");
